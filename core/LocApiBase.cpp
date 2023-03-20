@@ -30,7 +30,7 @@
 /*
 Changes from Qualcomm Innovation Center are provided under the following license:
 
-Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -260,11 +260,13 @@ bool LocApiBase::needReport(const UlpLocation& ulpLocation,
     } else {
         // intermediate fix is not allowed, only can report out final fixes
         if (LOC_SESS_SUCCESS == status) {
-            // this is a final fix
+            // this is a final fix with satellite and/or sensor contribution
             LocPosTechMask mask =
-                LOC_POS_TECH_MASK_SATELLITE | LOC_POS_TECH_MASK_SENSORS | LOC_POS_TECH_MASK_HYBRID |
-                LOC_POS_TECH_MASK_PROPAGATED;
-            // it is a Satellite fix or a sensor fix
+                LOC_POS_TECH_MASK_SATELLITE | LOC_POS_TECH_MASK_SENSORS;
+#ifndef __ANDROID__
+            // Include propagated GPS fix if not on Android target
+            mask |=  LOC_POS_TECH_MASK_PROPAGATED;
+#endif
             reported = (mask & techMask);
         }
     }
@@ -960,33 +962,34 @@ void LocApiBase::
 DEFAULT_IMPL()
 
 void LocApiBase::
-    getRobustLocationConfig(uint32_t sessionId, LocApiResponse* /*adapterResponse*/)
+    getRobustLocationConfig(uint32_t /*sessionId*/, LocApiResponse* /*adapterResponse*/)
 DEFAULT_IMPL()
 
 void LocApiBase::
-    configMinGpsWeek(uint16_t minGpsWeek,
+    configMinGpsWeek(uint16_t /*minGpsWeek*/,
                      LocApiResponse* /*adapterResponse*/)
 DEFAULT_IMPL()
 
 void LocApiBase::
-    getMinGpsWeek(uint32_t sessionId, LocApiResponse* /*adapterResponse*/)
+    getMinGpsWeek(uint32_t /*sessionId*/, LocApiResponse* /*adapterResponse*/)
 DEFAULT_IMPL()
 
 LocationError LocApiBase::
-    setParameterSync(const GnssConfig& gnssConfig)
+    setParameterSync(const GnssConfig& /*gnssConfig*/)
 DEFAULT_IMPL(LOCATION_ERROR_SUCCESS)
 
 void LocApiBase::
-    getParameter(uint32_t sessionId, GnssConfigFlagsMask flags, LocApiResponse* /*adapterResponse*/)
+    getParameter(uint32_t /*sessionId*/, GnssConfigFlagsMask /*flags*/,
+                 LocApiResponse* /*adapterResponse*/)
 DEFAULT_IMPL()
 
 void LocApiBase::
-    configConstellationMultiBand(const GnssSvTypeConfig& secondaryBandConfig,
+    configConstellationMultiBand(const GnssSvTypeConfig& /*secondaryBandConfig*/,
                                  LocApiResponse* /*adapterResponse*/)
 DEFAULT_IMPL()
 
 void LocApiBase::
-    getConstellationMultiBandConfig(uint32_t sessionId, LocApiResponse* /*adapterResponse*/)
+    getConstellationMultiBandConfig(uint32_t /*sessionId*/, LocApiResponse* /*adapterResponse*/)
 DEFAULT_IMPL()
 
 void LocApiBase::setTribandState(bool /*enabled*/)
