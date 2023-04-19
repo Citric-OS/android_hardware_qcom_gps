@@ -836,6 +836,23 @@ public:
         LOC_LOGd("Ntrip started: %d", mDataItem.mNtripStarted);
     }
 };
+
+class SystemStatusLocFeatureStatus : public SystemStatusItemBase {
+public:
+    LocFeatureStatusDataItem mDataItem;
+    inline SystemStatusLocFeatureStatus(std::unordered_set<int> fids) : mDataItem(fids) {}
+    inline SystemStatusLocFeatureStatus(const LocFeatureStatusDataItem& itemBase):
+            mDataItem(itemBase) {}
+    inline bool equals(const SystemStatusItemBase& peer) override {
+        return mDataItem.mFids ==
+            ((const SystemStatusLocFeatureStatus&)peer).mDataItem.mFids;
+    }
+    inline void dump(void) override {
+        string str;
+        mDataItem.stringify(str);
+        LOC_LOGd("Location feature qwes status: %s", str.c_str());
+    }
+};
 /******************************************************************************
  SystemStatusReports
 ******************************************************************************/
@@ -888,6 +905,7 @@ public:
     std::vector<SystemStatusPreciseLocationEnabled>  mPreciseLocationEnabled;
     std::vector<SystemStatusTrackingStarted>  mTrackingStarted;
     std::vector<SystemStatusNtripStarted>  mNtripStarted;
+    std::vector<SystemStatusLocFeatureStatus>  mLocFeatureStatus;
 };
 
 /******************************************************************************
@@ -942,6 +960,7 @@ public:
     bool eventSetTracking(bool tracking, bool updateSysStatusTrkState);
     bool eventNtripStarted(bool ntripStarted);
     bool eventPreciseLocation(bool preciseLocation);
+    bool eventLocFeatureStatus(std::unordered_set<int> fids);
 };
 
 } // namespace loc_core

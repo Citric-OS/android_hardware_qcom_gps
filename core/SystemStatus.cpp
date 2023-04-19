@@ -30,7 +30,7 @@
 /*
 Changes from Qualcomm Innovation Center are provided under the following license:
 
-Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -1027,8 +1027,7 @@ bool SystemStatusRfAndParams::equals(const SystemStatusItemBase& peer) {
 void SystemStatusRfAndParams::dump()
 {
     LOC_LOGV("RfAndParams: u=%ld:%ld p=%d bi=%d bq=%d ai=%d aq=%d "
-             "jgp=%d jgl=%d jbd=%d jga=%d "
-             "agp=%d agl=%d abd=%d aga=%d",
+             "jgp=%d jgl=%d jbd=%d jga=%d ",
              mUtcTime.tv_sec, mUtcTime.tv_nsec,
              mPgaGain,
              mGpsBpAmpI,
@@ -1785,6 +1784,11 @@ bool SystemStatus::eventDataItemNotify(IDataItemCore* dataitem)
                     SystemStatusPreciseLocationEnabled(
                         *(static_cast<PreciseLocationEnabledDataItem*>(dataitem))));
             break;
+        case LOC_FEATURE_STATUS_DATA_ITEM_ID:
+            ret = setIteminReport(mCache.mLocFeatureStatus,
+                    SystemStatusLocFeatureStatus(
+                        *(static_cast<LocFeatureStatusDataItem*>(dataitem))));
+            break;
         default:
             break;
     }
@@ -2043,6 +2047,19 @@ bool SystemStatus::eventSetTracking(bool tracking, bool updateSysStatusTrkState)
     SystemStatusTrackingStarted s(tracking);
     mSysStatusObsvr.notify({&s.mDataItem});
     pthread_mutex_unlock(&mMutexSystemStatus);
+    return true;
+}
+
+/******************************************************************************
+@brief      API to update Location feature QWES status
+
+@param[In]  Location feature QWES status
+
+@return     true when successfully done
+******************************************************************************/
+bool SystemStatus::eventLocFeatureStatus(std::unordered_set<int> fids) {
+    SystemStatusLocFeatureStatus  s(fids);
+    mSysStatusObsvr.notify({&s.mDataItem});
     return true;
 }
 } // namespace loc_core

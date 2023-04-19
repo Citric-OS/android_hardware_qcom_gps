@@ -30,7 +30,7 @@
 /*
 Changes from Qualcomm Innovation Center are provided under the following license:
 
-Copyright (c) 2022, 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -376,6 +376,10 @@ LocAdapterBase::getCapabilities()
         if ((hwMask & LOCATION_WIFI_CAPABILITY_RSSI) != 0) {
             mask |= LOCATION_CAPABILITIES_WIFI_RSSI_POSITIONING;
         }
+
+        if (ContextBase::isFeatureSupported(LOC_SUPPORTED_FEATURE_GNSS_BANDS_SUPPORTED)) {
+            mask |= LOCATION_CAPABILITIES_GNSS_BANDS_BIT;
+        }
     } else {
         LOC_LOGe("attempt to get capabilities before they are known.");
     }
@@ -499,5 +503,9 @@ DEFAULT_IMPL()
 
 void LocAdapterBase::
     reportDcMessage(const GnssDcReportInfo& /*dcReport*/)
+DEFAULT_IMPL()
+
+void LocAdapterBase::
+    reportSignalTypeCapabilities(const GnssCapabNotification& /*gnssCapabNotification*/)
 DEFAULT_IMPL()
 } // namespace loc_core

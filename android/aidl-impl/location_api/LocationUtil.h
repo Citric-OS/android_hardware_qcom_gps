@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -42,6 +42,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <aidl/android/hardware/gnss/GnssLocation.h>
 #include <aidl/android/hardware/gnss/SatellitePvt.h>
 #include <aidl/android/hardware/gnss/GnssConstellationType.h>
+#include <aidl/android/hardware/gnss/GnssSignalType.h>
 
 namespace android {
 namespace hardware {
@@ -54,6 +55,7 @@ using ::aidl::android::hardware::gnss::IGnssDebug;
 using ::aidl::android::hardware::gnss::GnssLocation;
 using ::aidl::android::hardware::gnss::GnssConstellationType;
 using ::aidl::android::hardware::gnss::SatellitePvt;
+using ::aidl::android::hardware::gnss::GnssSignalType;
 
 void convertGnssLocation(const GnssLocation& in, Location& out);
 void convertGnssLocation(const Location& in, GnssLocation& out);
@@ -68,7 +70,8 @@ void convertGnssEphemerisHealth(const GnssEphemerisHealth& in,
 void convertSingleSatCorrections(const SingleSatCorrection& in, GnssSingleSatCorrection& out);
 void convertMeasurementCorrections(const MeasurementCorrections& in,
                                    GnssMeasurementCorrections& out);
-
+void convertGnssMeasurementsCodeType(const GnssMeasurementsCodeType& inCodeType,
+                                     const char* inOtherCodeTypeName, GnssSignalType& out);
 }  // namespace implementation
 }  // namespace aidl
 }  // namespace gnss

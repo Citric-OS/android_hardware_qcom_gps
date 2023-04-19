@@ -30,7 +30,7 @@
 /*
 Changes from Qualcomm Innovation Center are provided under the following license:
 
-Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022, 2023 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -73,7 +73,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <IDataItemCore.h>
 #include <gps_extended_c.h>
 #include <inttypes.h>
-
+#include <unordered_set>
 #define MAC_ADDRESS_LENGTH    6
 // MAC address length in bytes
 #define WIFI_SUPPLICANT_DEFAULT_STATE    0
@@ -667,6 +667,17 @@ class NtripStartedDataItem: public IDataItemCore {
         virtual int32_t copyFrom(IDataItemCore* /*src*/) override;
         // Data members
         bool mNtripStarted;
+};
+
+class LocFeatureStatusDataItem: public IDataItemCore {
+    public:
+        LocFeatureStatusDataItem(std::unordered_set<int> fids) :
+            mFids(fids) {mId = LOC_FEATURE_STATUS_DATA_ITEM_ID;}
+        virtual ~LocFeatureStatusDataItem() {}
+        virtual void stringify(string& /*valueStr*/) override;
+        virtual int32_t copyFrom(IDataItemCore* /*src*/) override;
+        // Data members
+        std::unordered_set<int> mFids;
 };
 
 } // namespace loc_core

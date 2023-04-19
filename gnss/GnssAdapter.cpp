@@ -453,6 +453,12 @@ GnssAdapter::convertLocation(Location& out, const UlpLocation& ulpLocation,
             out.qualityType = LOCATION_DGNSS_QUALITY_TYPE;
         }
     }
+
+    if ((GPS_LOCATION_EXTENDED_HAS_SYSTEM_TICK & locationExtended.flags) &&
+        (LOC_OUTPUT_ENGINE_SPE == locationExtended.locOutputEngType)) {
+        out.flags |= LOCATION_HAS_SYSTEM_TICK_BIT;
+        out.systemTick = locationExtended.systemTick;
+    }
 }
 
 void GnssAdapter::fillElapsedRealTime(const GpsLocationExtended& locationExtended,
@@ -483,6 +489,12 @@ void GnssAdapter::fillElapsedRealTime(const GpsLocationExtended& locationExtende
         }
 #endif //FEATURE_AUTOMOTIVE
     }
+#ifndef FEATURE_AUTOMOTIVE
+    if (!(out.flags & LOCATION_HAS_ELAPSED_REAL_TIME_BIT)) {
+        out.elapsedRealTime = getBootTimeMilliSec() * 1000000;
+        out.elapsedRealTimeUnc = mPositionElapsedRealTimeCal.getElapsedRealtimeUncNanos();
+    }
+#endif //FEATURE_AUTOMOTIVE
 }
 
 /* This is utility routine that computes number of SV used
@@ -1224,7 +1236,8 @@ GnssAdapter::setConfig()
         }
         mLocApi->configRobustLocation(
                 mLocConfigInfo.robustLocationConfigInfo.enable,
-                mLocConfigInfo.robustLocationConfigInfo.enableFor911);
+                mLocConfigInfo.robustLocationConfigInfo.enableFor911,
+                nullptr, true);
 
         if (sapConf.GYRO_BIAS_RANDOM_WALK_VALID ||
             sapConf.ACCEL_RANDOM_WALK_SPECTRAL_DENSITY_VALID ||
@@ -2967,6 +2980,11 @@ GnssAdapter::updateClientsEventMask()
         if (it->second.gnssDcReportCb != nullptr) {
             mask |= LOC_API_ADAPTER_BIT_DISASTER_CRISIS_REPORT;
         }
+        if (it->second.gnssSignalTypesCb != nullptr) {
+            // GNSS Bands supported
+            LOC_LOGd("GNSS Bands supported");
+            mask |= LOC_API_ADAPTER_BIT_GNSS_BANDS_SUPPORTED;
+        }
     }
 
     /*
@@ -3197,7 +3215,8 @@ GnssAdapter::hasCallbacksToStartTracking(LocationAPI* client)
         if (it->second.trackingCb || it->second.gnssLocationInfoCb ||
                 it->second.engineLocationsInfoCb || it->second.gnssMeasurementsCb ||
                 it->second.gnssNHzMeasurementsCb || it->second.gnssDataCb ||
-                it->second.gnssSvCb || it->second.gnssNmeaCb || it->second.gnssDcReportCb) {
+                it->second.gnssSvCb || it->second.gnssNmeaCb || it->second.gnssDcReportCb ||
+                it->second.gnssSignalTypesCb) {
             allowed = true;
         } else {
             LOC_LOGi("missing right callback to start tracking")
@@ -4262,12 +4281,32 @@ GnssAdapter::reportPositionEvent(const UlpLocation& ulpLocation,
     // to send out to the clients
     if (!ulpLocation.unpropagatedPosition) {
         GnssDataNotification dataNotifyCopy = {};
+        uint64_t pvtReportTimeDelta = 0ULL;
+
         if (pDataNotify) {
             dataNotifyCopy = *pDataNotify;
             dataNotifyCopy.size = sizeof(dataNotifyCopy);
         }
-        sendMsg(new MsgReportSPEPosition(*this, ulpLocation, locationExtended,
-                                          status, techMask, dataNotifyCopy, msInWeek));
+
+        if (locationExtended.isReportTimeAccurate()) {
+#define NSEC_IN_ONE_MSEC 1000000ULL
+
+            uint64_t hlosQtimerTick = getQTimerTickCount();
+
+            // locationExtended.systemTick contains the PVT applicable time,
+            // if it is in the future, do not report it promptly
+            if (locationExtended.systemTick > hlosQtimerTick) {
+                uint64_t hlosQtimerNanos = qTimerTicksToNanos(double(hlosQtimerTick));
+                uint64_t gpsPvtApplicableNanos =
+                        qTimerTicksToNanos(double(locationExtended.systemTick));
+                pvtReportTimeDelta =
+                        (gpsPvtApplicableNanos - hlosQtimerNanos)/NSEC_IN_ONE_MSEC;
+            }
+        }
+
+        MsgReportSPEPosition* pLocMsg = new MsgReportSPEPosition(*this, ulpLocation,
+                locationExtended, status, techMask, dataNotifyCopy, msInWeek);
+        sendMsg((const LocMsg*)pLocMsg, (uint32_t)pvtReportTimeDelta);
     }
 }
 
@@ -4501,18 +4540,7 @@ GnssAdapter::reportPosition(const UlpLocation& ulpLocation,
                 });
         }
 
-        mGnssSvIdUsedInPosAvail = false;
-        mGnssMbSvIdUsedInPosAvail = false;
         if (reportToAllClients) {
-            if (locationExtended.flags & GPS_LOCATION_EXTENDED_HAS_GNSS_SV_USED_DATA) {
-                mGnssSvIdUsedInPosAvail = true;
-                mGnssSvIdUsedInPosition = locationExtended.gnss_sv_used_ids;
-                if (locationExtended.flags & GPS_LOCATION_EXTENDED_HAS_MULTIBAND) {
-                    mGnssMbSvIdUsedInPosAvail = true;
-                    mGnssMbSvIdUsedInPosition = locationExtended.gnss_mb_sv_used_ids;
-                }
-            }
-
             // if PACE is enabled
             if ((true == mLocConfigInfo.paceConfigInfo.isValid) &&
                 (true == mLocConfigInfo.paceConfigInfo.enable)) {
@@ -5154,6 +5182,31 @@ GnssAdapter::reportDcMessage(const GnssDcReportInfo& dcReport) {
     sendMsg(new MsgDcReport(*this, dcReport));
 }
 
+void
+GnssAdapter::reportSignalTypeCapabilities(const GnssCapabNotification& gnssCapabNotification) {
+    LOC_LOGv("received SignalTypeCapabilities report message");
+    struct MsgSignalTypeReport : public LocMsg {
+        GnssAdapter& mAdapter;
+        GnssCapabNotification mGnssCapabNotification;
+        inline MsgSignalTypeReport(GnssAdapter& adapter,
+            const GnssCapabNotification& gnssCapabNotification) :
+            LocMsg(),
+            mAdapter(adapter),
+            mGnssCapabNotification(gnssCapabNotification) {}
+        inline virtual void proc() const {
+            LOC_LOGv("Enter");
+            for (auto it = mAdapter.mClientData.begin(); it != mAdapter.mClientData.end(); ++it) {
+                if (it->second.gnssSignalTypesCb != nullptr) {
+                    LOC_LOGv("Calling gnssSignalTypesCb");
+                    it->second.gnssSignalTypesCb(mGnssCapabNotification);
+                }
+            }
+        }
+    };
+
+    sendMsg(new MsgSignalTypeReport(*this, gnssCapabNotification));
+}
+
 static void* niThreadProc(void *args)
 {
     NiSession* pSession = (NiSession*)args;
@@ -5426,7 +5479,7 @@ void GnssAdapter::requestOdcpi(const OdcpiRequestInfo& request)
         // extending the odcpi session past 30 seconds if needed
         if (ODCPI_REQUEST_TYPE_START == request.type) {
             if (!(mOdcpiStateMask & ODCPI_REQ_ACTIVE)  && false == mOdcpiTimer.isActive()) {
-                mControlCallbacks.odcpiReqCb(request);
+                fireOdcpiRequest(request);
                 mOdcpiStateMask |= ODCPI_REQ_ACTIVE;
                 if (nullptr != mEsStatusCb) {
                     mEsStatusCb(request.isEmergencyMode);
@@ -5438,7 +5491,7 @@ void GnssAdapter::requestOdcpi(const OdcpiRequestInfo& request)
             // and restart the timer
             } else if (false == mOdcpiRequest.isEmergencyMode &&
                        true == request.isEmergencyMode) {
-                mControlCallbacks.odcpiReqCb(request);
+                fireOdcpiRequest(request);
                 mOdcpiStateMask |= ODCPI_REQ_ACTIVE;
                 if (nullptr != mEsStatusCb) {
                     mEsStatusCb(request.isEmergencyMode);
@@ -5466,7 +5519,7 @@ void GnssAdapter::requestOdcpi(const OdcpiRequestInfo& request)
         // to avoid spamming more odcpi requests to the framework
         } else if (ODCPI_REQUEST_TYPE_STOP == request.type) {
             LOC_LOGd("request: type %d, isEmergency %d", request.type, request.isEmergencyMode);
-            mControlCallbacks.odcpiReqCb(request);
+            fireOdcpiRequest(request);
             mOdcpiStateMask = 0;
             sendEmergencyCallStatusEvent = true;
             if (nullptr != mEsStatusCb) {
@@ -5602,9 +5655,6 @@ bool GnssAdapter::reportQwesCapabilities(
             mAdapter(adapter),
             mFeatureMap(std::move(featureMap)) {}
         inline virtual void proc() const {
-            LOC_LOGi("ReportQwesFeatureStatus before caps %" PRIx64 " ",
-                mAdapter.getCapabilities());
-            ContextBase::setQwesFeatureStatus(mFeatureMap);
             LOC_LOGi("ReportQwesFeatureStatus After caps %" PRIx64 " ",
                 mAdapter.getCapabilities());
             mAdapter.broadcastCapabilities(mAdapter.getCapabilities());
@@ -5616,36 +5666,84 @@ bool GnssAdapter::reportQwesCapabilities(
 }
 
 void GnssAdapter::initOdcpiCommand(const odcpiRequestCallback& callback,
-                                   OdcpiPrioritytype priority)
+                                   OdcpiPrioritytype priority,
+                                   OdcpiCallbackTypeMask typeMask)
 {
     struct MsgInitOdcpi : public LocMsg {
         GnssAdapter& mAdapter;
         odcpiRequestCallback mOdcpiCb;
         OdcpiPrioritytype mPriority;
+        OdcpiCallbackTypeMask mTypeMask;
         inline MsgInitOdcpi(GnssAdapter& adapter,
                 const odcpiRequestCallback& callback,
-                OdcpiPrioritytype priority) :
+                OdcpiPrioritytype priority,
+                OdcpiCallbackTypeMask typeMask) :
                 LocMsg(),
                 mAdapter(adapter),
-                mOdcpiCb(callback), mPriority(priority){}
+                mOdcpiCb(callback), mPriority(priority),
+                mTypeMask(typeMask) {}
         inline virtual void proc() const {
-            mAdapter.initOdcpi(mOdcpiCb, mPriority);
+            mAdapter.initOdcpi(mOdcpiCb, mPriority, mTypeMask);
         }
     };
 
-    sendMsg(new MsgInitOdcpi(*this, callback, priority));
+    sendMsg(new MsgInitOdcpi(*this, callback, priority, typeMask));
+}
+
+void GnssAdapter::deRegisterOdcpiCommand(OdcpiPrioritytype priority,
+        OdcpiCallbackTypeMask typeMask) {
+    struct MsgDeRegisterNonEsOdcpi : public LocMsg {
+        GnssAdapter& mAdapter;
+        OdcpiPrioritytype mPriority;
+        OdcpiCallbackTypeMask mTypeMask;
+        inline MsgDeRegisterNonEsOdcpi(GnssAdapter& adapter,
+                OdcpiPrioritytype priority,
+                OdcpiCallbackTypeMask typeMask) :
+            LocMsg(),
+            mAdapter(adapter),
+            mPriority(priority),
+            mTypeMask(typeMask) {}
+        inline virtual void proc() const {
+            mAdapter.deRegisterOdcpi(mPriority, mTypeMask);
+        }
+    };
+
+    sendMsg(new MsgDeRegisterNonEsOdcpi(*this, priority, typeMask));
+}
+
+void GnssAdapter::fireOdcpiRequest(const OdcpiRequestInfo& request) {
+    if (request.isEmergencyMode) {
+        mControlCallbacks.odcpiReqCb(request);
+    } else {
+        std::unordered_map<OdcpiPrioritytype, odcpiRequestCallback>::iterator iter;
+        for (int priority = ODCPI_HANDLER_PRIORITY_HIGH;
+                priority >= ODCPI_HANDLER_PRIORITY_LOW && iter == mNonEsOdcpiReqCbMap.end();
+                priority--) {
+            iter = mNonEsOdcpiReqCbMap.find((OdcpiPrioritytype)priority);
+        }
+        if (iter != mNonEsOdcpiReqCbMap.end()) {
+            iter->second(request);
+        }
+    }
 }
 
 void GnssAdapter::initOdcpi(const odcpiRequestCallback& callback,
-            OdcpiPrioritytype priority)
-{
-    LOC_LOGd("In priority: %d, Curr priority: %d", priority, mCallbackPriority);
-    if (priority >= mCallbackPriority) {
-        mControlCallbacks.odcpiReqCb = callback;
-        mCallbackPriority = priority;
-        /* Register for WIFI request */
-        updateEvtMask(LOC_API_ADAPTER_BIT_REQUEST_WIFI,
-                LOC_REGISTRATION_MASK_ENABLED);
+            OdcpiPrioritytype priority, OdcpiCallbackTypeMask typeMask) {
+    if (typeMask & EMERGENCY_ODCPI) {
+        LOC_LOGd("In priority: %d, Curr priority: %d", priority, mCallbackPriority);
+        if (priority >= mCallbackPriority) {
+            mControlCallbacks.odcpiReqCb = callback;
+            mCallbackPriority = priority;
+            /* Register for WIFI request */
+            updateEvtMask(LOC_API_ADAPTER_BIT_REQUEST_WIFI,
+                    LOC_REGISTRATION_MASK_ENABLED);
+        }
+    }
+    if (typeMask & NON_EMERGENCY_ODCPI) {
+        //If this is for non emergency odcpi,
+        //Only set callback to mNonEsOdcpiReqCbMap according to its priority
+        //Will overwrite callback with same priority in this map
+        mNonEsOdcpiReqCbMap[priority] = callback;
     }
     UTIL_READ_CONF(LOC_PATH_IZAT_CONF, izatConfParamTable);
 }
@@ -5768,7 +5866,7 @@ void GnssAdapter::odcpiTimerExpire()
     // if ODCPI request is still active after timer
     // expires, request again and restart timer
     if (mOdcpiStateMask & ODCPI_REQ_ACTIVE) {
-        mControlCallbacks.odcpiReqCb(mOdcpiRequest);
+        fireOdcpiRequest(mOdcpiRequest);
         mOdcpiTimer.restart();
     } else {
         mOdcpiTimer.stop();
@@ -6690,27 +6788,28 @@ GnssAdapter::nfwControlCommand(std::vector<std::string>& enabledNfws) {
                 return;
             }
 
-            GnssConfigGpsLock gpsLock;
+            if (mAdapter.mSupportNfwControl) {
+                GnssConfigGpsLock gpsLock;
 
-            uint32_t nfwControlBits;
-            nfwControlBits = mAdapter.getNfwControlBits(mEnabledNfws);
-            gpsLock = ContextBase::mGps_conf.GPS_LOCK;
-            gpsLock &= GNSS_CONFIG_GPS_LOCK_MO;
-            gpsLock |= nfwControlBits;
-            ContextBase::mGps_conf.GPS_LOCK = gpsLock;
+                uint32_t nfwControlBits;
+                nfwControlBits = mAdapter.getNfwControlBits(mEnabledNfws);
+                gpsLock = ContextBase::mGps_conf.GPS_LOCK;
+                gpsLock &= GNSS_CONFIG_GPS_LOCK_MO;
+                gpsLock |= nfwControlBits;
+                ContextBase::mGps_conf.GPS_LOCK = gpsLock;
 
-            LOC_LOGv("gpsLock = 0x%X nfwControlBits = 0x%X", gpsLock, nfwControlBits);
-            mApi.sendMsg(new LocApiMsg([&mApi = mApi, gpsLock]() {
-                         mApi.setGpsLockSync((GnssConfigGpsLock)gpsLock);
-            }));
+                LOC_LOGv("gpsLock = 0x%X nfwControlBits = 0x%X", gpsLock, nfwControlBits);
+                mApi.sendMsg(new LocApiMsg([&mApi = mApi, gpsLock]() {
+                             mApi.setGpsLockSync((GnssConfigGpsLock)gpsLock);
+                }));
+            } else {
+                LOC_LOGw("NFW control is not supported, do not use this for NFW status");
+            }
         }
     };
 
-    if (mSupportNfwControl) {
-        sendMsg(new MsgControlNfwLocationAccess(*this, *mLocApi, enabledNfws));
-    } else {
-        LOC_LOGw("NFW control is not supported, do not use this for NFW");
-    }
+    sendMsg(new MsgControlNfwLocationAccess(*this, *mLocApi, enabledNfws));
+
 }
 
 // Set tunc constrained mode, use 0 session id to indicate
@@ -7203,7 +7302,7 @@ GnssAdapter::configRobustLocation(uint32_t sessionId,
             LOC_LOGe("memory alloc failed");
         }
     }
-    mLocApi->configRobustLocation(enable, enableForE911, locApiResponse);
+    mLocApi->configRobustLocation(enable, enableForE911, locApiResponse, true);
 }
 
 uint32_t GnssAdapter::configRobustLocationCommand(
@@ -7598,9 +7697,14 @@ void GnssAdapter::configPrecisePositioningCommand(
         inline virtual void proc() const {
             LOC_LOGd("ConfigPrecisePositioning: enable: %d, appHash: %s, featureId: %d", mEnable,
                     mAppHash.c_str(), mFeatureId);
-            mAdapter.mEngHubProxy->configPrecisePositioning(mFeatureId, mEnable, mAppHash);
-            //call QMI API to configPrecisePositioning
-            mAdapter.mLocApi->configPrecisePositioning(mFeatureId, mEnable, mAppHash);
+
+            if (QESDK_FEATURE_ID_EDGNSS == mFeatureId || QESDK_FEATURE_ID_RTK == mFeatureId) {
+                mAdapter.mEngHubProxy->configPrecisePositioning(mFeatureId, mEnable, mAppHash);
+                //call QMI API to configPrecisePositioning
+                mAdapter.mLocApi->configPrecisePositioning(mFeatureId, mEnable, mAppHash);
+            } else if (QESDK_FEATURE_ID_RL == mFeatureId) {
+                mAdapter.mLocApi->configRobustLocation(mEnable, false);
+            }
         }
     };
     sendMsg(new MsgConfigPrecisePositioning(*this, enable, appHash, featureId));
@@ -7753,6 +7857,7 @@ GnssAdapter::initEngHubProxy() {
         GnssAdapterUpdateQwesFeatureStatusCb updateQwesFeatureStatusCb =
             [this] (const std::unordered_map<LocationQwesFeatureType, bool> &featureMap) {
             handleQesdkQwesStatusFromEHub(featureMap);
+            ContextBase::setQwesFeatureStatus(featureMap);
             reportQwesCapabilities(featureMap);
         };
 
@@ -7760,7 +7865,8 @@ GnssAdapter::initEngHubProxy() {
         if(getter != nullptr) {
             // Wait for the script(rootdir/etc/init.qcom.rc) to create socket folder
             locUtilWaitForDir(SOCKET_DIR_EHUB);
-            EngineHubProxyBase* hubProxy = (*getter) (mMsgTask, mSystemStatus->getOsObserver(),
+            EngineHubProxyBase* hubProxy = (*getter) (mMsgTask, mContext,
+                      mSystemStatus->getOsObserver(),
                       mEngServiceInfo, reportPositionEventCb, reqAidingDataCb,
                       updateNHzRequirementCb, updateQwesFeatureStatusCb,
                       [ this ] { return isPreciseEnabled(); });

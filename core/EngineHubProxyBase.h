@@ -30,7 +30,7 @@
 /*
 Changes from Qualcomm Innovation Center are provided under the following license:
 
-Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022, 2023 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -67,6 +67,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef ENGINE_HUB_PROXY_BASE_H
 #define ENGINE_HUB_PROXY_BASE_H
 #include <unordered_map>
+#include <ContextBase.h>
 
 namespace loc_core {
 
@@ -192,6 +193,7 @@ typedef std::function<void(const std::unordered_map<LocationQwesFeatureType, boo
 // callback function to report back dr and ppe position and sv report
 typedef EngineHubProxyBase* (getEngHubProxyFn)(
         const MsgTask * msgTask,
+        const ContextBase * context,
         IOsObserver* osObserver,
         EngineServiceInfo& engServiceInfo,
         GnssAdapterReportEnginePositionsEventCb positionEventCb,

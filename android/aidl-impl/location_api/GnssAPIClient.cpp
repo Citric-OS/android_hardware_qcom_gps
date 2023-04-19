@@ -29,7 +29,7 @@
 /*
 Changes from Qualcomm Innovation Center are provided under the following license:
 
-Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -103,6 +103,18 @@ static void convertGnssSvStatus(const GnssSvNotification& in,
     }
 }
 
+static void convertGnssSignalType(const GnssCapabNotification& in,
+        std::vector<GnssSignalType>& out) {
+    out.resize(in.count);
+    for (size_t i = 0; i < in.count; i++) {
+        gnss::aidl::implementation::convertGnssConstellationType(in.gnssSignalType[i].svType,
+                out[i].constellation);
+        out[i].carrierFrequencyHz = in.gnssSignalType[i].carrierFrequencyHz;
+        gnss::aidl::implementation::convertGnssMeasurementsCodeType(in.gnssSignalType[i].codeType,
+                in.gnssSignalType[i].otherCodeTypeName, out[i]);
+    }
+}
+
 GnssAPIClient::GnssAPIClient(const shared_ptr<IGnssCallback>& gpsCb) :
     LocationAPIClientBase(),
     mControlClient(new LocationAPIControlClient()),
@@ -134,10 +146,16 @@ void GnssAPIClient::setFlpCallbacks() {
     LocationCallbacks locationCallbacks;
     memset(&locationCallbacks, 0, sizeof(LocationCallbacks));
     locationCallbacks.size = sizeof(LocationCallbacks);
+    mTrackingOptions.qualityLevelAccepted = QUALITY_ANY_VALID_FIX;
 
     locationCallbacks.trackingCb = [this](const Location& location) {
         onTrackingCb(location);
     };
+
+    locationCallbacks.gnssSvCb = [this](GnssSvNotification gnssSvNotification) {
+        onGnssSvCb(gnssSvNotification);
+    };
+
     locAPISetCallbacks(locationCallbacks);
 }
 
@@ -190,6 +208,11 @@ void GnssAPIClient::setCallbacks() {
     }
 
     locationCallbacks.gnssMeasurementsCb = nullptr;
+
+    locationCallbacks.gnssSignalTypesCb =
+            [this](const GnssCapabNotification& gnssCapabNotification) {
+        onGnssSignalTypesCb(gnssCapabNotification);
+    };
 
     locAPISetCallbacks(locationCallbacks);
 }
@@ -388,7 +411,7 @@ void GnssAPIClient::gnssConfigurationUpdate(const GnssConfig& gnssConfig) {
 
 // callbacks
 void GnssAPIClient::onCapabilitiesCb(LocationCapabilitiesMask capabilitiesMask) {
-    LOC_LOGd("mLocationCapabilitiesMask=%02x capabilitiesMask=%02x",
+    LOC_LOGd("mLocationCapabilitiesMask=0x%" PRIx64 ", capabilitiesMask=0x%" PRIx64 ".",
              mLocationCapabilitiesMask, capabilitiesMask);
 
     updateCapabilities(capabilitiesMask, false);
@@ -448,6 +471,10 @@ void GnssAPIClient::updateCapabilities(LocationCapabilitiesMask capabilitiesMask
         data |= IGnssCallback::CAPABILITY_SATELLITE_PVT;
     }
 
+    if (capabilitiesMask & LOCATION_CAPABILITIES_QWES_CARRIER_PHASE_BIT) {
+        data |= IGnssCallback::CAPABILITY_ACCUMULATED_DELTA_RANGE;
+    }
+
     IGnssCallback::GnssSystemInfo gnssInfo = { .yearOfHw = 2015, "aidl-impl" };
 
     if (capabilitiesMask & LOCATION_CAPABILITIES_GNSS_MEASUREMENTS_BIT) {
@@ -461,6 +488,9 @@ void GnssAPIClient::updateCapabilities(LocationCapabilitiesMask capabilitiesMask
                     gnssInfo.yearOfHw++; // 2019
                     if (capabilitiesMask & LOCATION_CAPABILITIES_CONFORMITY_INDEX_BIT) {
                         gnssInfo.yearOfHw += 3; // 2022
+                        if (capabilitiesMask & LOCATION_CAPABILITIES_GNSS_BANDS_BIT) {
+                            gnssInfo.yearOfHw++; // 2023
+                        }
                     }
                 }
             }
@@ -570,6 +600,23 @@ void GnssAPIClient::onEngineLocationsInfoCb(uint32_t count,
         onTrackingCb(locPtr->location);
     }
 }
+
+void GnssAPIClient::onGnssSignalTypesCb(const GnssCapabNotification& gnssCapabNotification) {
+    LOC_LOGd("Enter");
+    mMutex.lock();
+    auto gnssCbIface(mGnssCbIface);
+    mMutex.unlock();
+
+    if (gnssCbIface != nullptr) {
+        std::vector<GnssSignalType> gnssSignalTypes;
+        convertGnssSignalType(gnssCapabNotification, gnssSignalTypes);
+        auto r = gnssCbIface->gnssSetSignalTypeCapabilitiesCb(gnssSignalTypes);
+        if (!r.isOk()) {
+            LOC_LOGe("Error from gnssSvStatusCb");
+        }
+    }
+}
+
 void GnssAPIClient::onStartTrackingCb(LocationError error) {
     LOC_LOGd("]: (%d)", error);
     mMutex.lock();

@@ -30,7 +30,7 @@
  /*
  Changes from Qualcomm Innovation Center are provided under the following license:
 
- Copyright (c) 2022, 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted (subject to the limitations in the
@@ -140,6 +140,8 @@ public:
             GnssSvMeasurementHeader& svMeasSetHeader,
             GnssMeasurementsData& measurementData) { return false; }
     inline virtual float getGeoidalSeparation(double latitude, double longitude) { return 0.0; }
+    inline virtual bool checkFeatureStatus(int* fids, LocFeatureStatus* status,
+            uint32_t idCount, bool directQwesCall = false) {return false;}
 };
 
 class LocApiBase {
@@ -184,6 +186,9 @@ public:
             mMsgTask->sendMsg(msg);
         }
     }
+    inline MsgTask* getMsgTask() const {
+        return mMsgTask;
+    }
     inline void destroy() {
         close();
         struct LocKillMsg : public LocMsg {
@@ -223,6 +228,7 @@ public:
                           const char* url3, const int maxlength);
     void reportLocationSystemInfo(const LocationSystemInfo& locationSystemInfo);
     void reportDcMessage(const GnssDcReportInfo& dcReport);
+    void reportSignalTypeCapabilities(const GnssCapabNotification& gnssCapabNotification);
     void requestXtraData();
     void requestTime();
     void requestLocation();
@@ -376,7 +382,8 @@ public:
     virtual void updatePowerConnectState(bool connected);
 
     virtual void configRobustLocation(bool enable, bool enableForE911,
-                                      LocApiResponse* adapterResponse=nullptr);
+                                      LocApiResponse* adapterResponse = nullptr,
+                                      bool enableForE911Valid = false);
     virtual void getRobustLocationConfig(uint32_t sessionId, LocApiResponse* adapterResponse);
     virtual void configMinGpsWeek(uint16_t minGpsWeek,
                                   LocApiResponse* adapterResponse=nullptr);

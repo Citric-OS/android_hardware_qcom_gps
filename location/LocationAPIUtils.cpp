@@ -27,7 +27,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
 #include <chrono>
 
 // Fudge fine location to coarse
-static const float MIN_ACCURACY_M = 200.0f;
+static const float MIN_ACCURACY_M = 2000.0f;
 static const long OFFSET_UPDATE_INTERVAL_MS = 60 * 60 * 1000;
 static const double CHANGE_PER_INTERVAL = 0.03;
 static const double NEW_WEIGHT = CHANGE_PER_INTERVAL;

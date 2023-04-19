@@ -29,7 +29,7 @@
 /*
 Changes from Qualcomm Innovation Center are provided under the following license:
 
-Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -117,6 +117,7 @@ public:
     void onGnssNmeaCb(GnssNmeaNotification gnssNmeaNotification) final;
     void onEngineLocationsInfoCb(uint32_t count,
             GnssLocationInfoNotification* engineLocationInfoNotification);
+    void onGnssSignalTypesCb(const GnssCapabNotification& gnssCapabNotification);
 
     void onStartTrackingCb(LocationError error) final;
     void onStopTrackingCb(LocationError error) final;
