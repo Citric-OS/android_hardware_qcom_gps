@@ -206,7 +206,8 @@ GnssAdapter::GnssAdapter() :
     mPowerElapsedRealTimeCal(30000000),
     mPositionElapsedRealTimeCal(30000000),
     mAddressRequestCb(nullptr),
-    mHmacConfig(HMAC_CONFIG_UNKNOWN)
+    mHmacConfig(HMAC_CONFIG_UNKNOWN),
+    mGnssCapabNotification{}
 {
     LOC_LOGD("%s]: Constructor %p", __func__, this);
     mLocPositionMode.mode = LOC_POSITION_MODE_INVALID;
@@ -527,6 +528,7 @@ GnssAdapter::convertLocationInfo(GnssLocationInfoNotification& out,
                                  const GpsLocationExtended& locationExtended,
                                  enum loc_sess_status status)
 {
+    memset(&out, 0, sizeof(GnssLocationInfoNotification));
     out.size = sizeof(GnssLocationInfoNotification);
     if (GPS_LOCATION_EXTENDED_HAS_ALTITUDE_MEAN_SEA_LEVEL & locationExtended.flags) {
         out.flags |= LDT_GNSS_LOCATION_INFO_ALTITUDE_MEAN_SEA_LEVEL_BIT;
@@ -856,6 +858,72 @@ GnssAdapter::convertLocationInfo(GnssLocationInfoNotification& out,
         for (uint32_t i = 0; i < locationExtended.numOfDgnssStationId; i++) {
             out.dgnssStationId[i] = locationExtended.dgnssStationId[i];
         }
+    }
+
+    if (locationExtended.calibrationStatus & DR_TURN_CALIBRATION_LOW) {
+        out.calibrationStatus |= DR_TURN_CALIBRATION_LOW;
+    } else if (locationExtended.calibrationStatus & DR_TURN_CALIBRATION_MEDIUM) {
+        out.calibrationStatus |= DR_TURN_CALIBRATION_MEDIUM;
+    } else if (locationExtended.calibrationStatus & DR_TURN_CALIBRATION_HIGH) {
+        out.calibrationStatus |= DR_TURN_CALIBRATION_HIGH;
+    }
+
+    if (locationExtended.calibrationStatus & DR_LINEAR_ACCEL_CALIBRATION_LOW) {
+        out.calibrationStatus |= DR_LINEAR_ACCEL_CALIBRATION_LOW;
+    } else if (locationExtended.calibrationStatus & DR_LINEAR_ACCEL_CALIBRATION_MEDIUM) {
+        out.calibrationStatus |= DR_LINEAR_ACCEL_CALIBRATION_MEDIUM;
+    } else if (locationExtended.calibrationStatus & DR_LINEAR_ACCEL_CALIBRATION_HIGH) {
+        out.calibrationStatus |= DR_LINEAR_ACCEL_CALIBRATION_HIGH;
+    }
+
+    if (locationExtended.calibrationStatus & DR_LINEAR_MOTION_CALIBRATION_LOW) {
+        out.calibrationStatus |= DR_LINEAR_MOTION_CALIBRATION_LOW;
+    } else if (locationExtended.calibrationStatus & DR_LINEAR_MOTION_CALIBRATION_MEDIUM) {
+        out.calibrationStatus |= DR_LINEAR_MOTION_CALIBRATION_MEDIUM;
+    } else if (locationExtended.calibrationStatus & DR_LINEAR_MOTION_CALIBRATION_HIGH) {
+        out.calibrationStatus |= DR_LINEAR_MOTION_CALIBRATION_HIGH;
+    }
+
+    if (locationExtended.calibrationStatus & DR_STATIC_CALIBRATION_LOW) {
+        out.calibrationStatus |= DR_STATIC_CALIBRATION_LOW;
+    } else if (locationExtended.calibrationStatus & DR_STATIC_CALIBRATION_MEDIUM) {
+        out.calibrationStatus |= DR_STATIC_CALIBRATION_MEDIUM;
+    } else if (locationExtended.calibrationStatus & DR_STATIC_CALIBRATION_HIGH) {
+        out.calibrationStatus |= DR_STATIC_CALIBRATION_HIGH;
+    }
+
+    if (locationExtended.drSolutionStatusMask & DRE_ERROR_UNCALIBRATED) {
+        out.drSolutionStatusMask |= DRE_ERROR_UNCALIBRATED;
+    }
+    if (locationExtended.drSolutionStatusMask & DRE_ERROR_GNSS_QUALITY_INSUFFICIENT) {
+        out.drSolutionStatusMask |= DRE_ERROR_GNSS_QUALITY_INSUFFICIENT;
+    }
+    if (locationExtended.drSolutionStatusMask & DRE_ERROR_FERRY_DETECTED) {
+        out.drSolutionStatusMask |= DRE_ERROR_FERRY_DETECTED;
+    }
+    if (locationExtended.drSolutionStatusMask & DRE_ERROR_6DOF_SENSOR_UNAVAILABLE) {
+        out.drSolutionStatusMask |= DRE_ERROR_6DOF_SENSOR_UNAVAILABLE;
+    }
+    if (locationExtended.drSolutionStatusMask & DRE_ERROR_VEHICLE_SPEED_UNAVAILABLE) {
+        out.drSolutionStatusMask |= DRE_ERROR_VEHICLE_SPEED_UNAVAILABLE;
+    }
+    if (locationExtended.drSolutionStatusMask & DRE_ERROR_GNSS_EPH_UNAVAILABLE) {
+        out.drSolutionStatusMask |= DRE_ERROR_GNSS_EPH_UNAVAILABLE;
+    }
+    if (locationExtended.drSolutionStatusMask & DRE_ERROR_GNSS_MEAS_UNAVAILABLE) {
+        out.drSolutionStatusMask |= DRE_ERROR_GNSS_MEAS_UNAVAILABLE;
+    }
+    if (locationExtended.drSolutionStatusMask & DRE_ERROR_NO_STORED_POSITION) {
+        out.drSolutionStatusMask |= DRE_ERROR_NO_STORED_POSITION;
+    }
+    if (locationExtended.drSolutionStatusMask & DRE_ERROR_MOVING_AT_START) {
+        out.drSolutionStatusMask |= DRE_ERROR_MOVING_AT_START;
+    }
+    if (locationExtended.drSolutionStatusMask & DRE_ERROR_POSITON_UNRELIABLE) {
+        out.drSolutionStatusMask |= DRE_ERROR_POSITON_UNRELIABLE;
+    }
+    if (locationExtended.drSolutionStatusMask & DRE_ERROR_GENERIC) {
+        out.drSolutionStatusMask |= DRE_ERROR_GENERIC;
     }
 }
 
@@ -2838,6 +2906,7 @@ GnssAdapter::updateSystemPowerStateCommand(PowerStateType systemPowerState) {
             mSystemPowerState(systemPowerState) {}
         inline virtual void proc() const {
             mAdapter.updateSystemPowerState(mSystemPowerState);
+            mAdapter.mXtraObserver.updatePowerState(mSystemPowerState);
         }
     };
 
@@ -2982,8 +3051,14 @@ GnssAdapter::updateClientsEventMask()
         }
         if (it->second.gnssSignalTypesCb != nullptr) {
             // GNSS Bands supported
-            LOC_LOGd("GNSS Bands supported");
+            LOC_LOGd("GNSS Bands supported, mGnssCapabNotification.count = %d",
+                     mGnssCapabNotification.count);
             mask |= LOC_API_ADAPTER_BIT_GNSS_BANDS_SUPPORTED;
+            // Calling gnssSignalTypesCb here to pass VTS
+            // not necessary during normal operation, but doesn't hurt
+            if (mGnssCapabNotification.count > 0) {
+                it->second.gnssSignalTypesCb(mGnssCapabNotification);
+            }
         }
     }
 
@@ -3061,7 +3136,7 @@ void
 GnssAdapter::handleEngineLockStatus(EngineLockState engineLockState) {
 
     GnssConfigGpsLock gpsLock = GNSS_CONFIG_GPS_LOCK_MO_AND_NI;
-    if (ENGINE_LOCK_STATE_ENABLED == engineLockState) {
+    if (ENGINE_LOCK_STATE_DISABLED != engineLockState) {
         for (auto msg: mPendingMsgs) {
             sendMsg(msg);
         }
@@ -3108,7 +3183,7 @@ GnssAdapter::handleEngineUpEvent()
             mAdapter.gnssSecondaryBandConfigUpdate();
             // restart sessions only when Lock state is enabled and in power state resume
             mAdapter.initGnssPowerStatistics();
-            if (ENGINE_LOCK_STATE_ENABLED == mApi.getEngineLockState()) {
+            if (ENGINE_LOCK_STATE_DISABLED != mApi.getEngineLockState()) {
                 for (auto msg: mAdapter.mPendingMsgs) {
                     mAdapter.sendMsg(msg);
                 }
@@ -3310,7 +3385,7 @@ void GnssAdapter::testLaunchQppeBringUp() {
             sleep(1);
             retryAttempts--;
         }
-        if (!(mDlpFeatureStatusMask & DLP_FEATURE_STATUS_LIBRARY_PRESENT)) {
+        if (!(mPpFeatureStatusMask & DLP_FEATURE_STATUS_LIBRARY_PRESENT)) {
             LOC_LOGd("timeout, no response from Qppe process.");
             getSystemStatus()->eventPreciseLocation(false);
         }
@@ -3430,7 +3505,7 @@ GnssAdapter::startTrackingCommand(LocationAPI* client, TrackingOptions& options)
                             [&mAdapter = mAdapter, mSessionId = mSessionId, mClient = mClient,
                             &mApi = mApi]
                             (LocationError err) {
-                        if (ENGINE_LOCK_STATE_ENABLED == mApi.getEngineLockState() &&
+                        if (ENGINE_LOCK_STATE_DISABLED != mApi.getEngineLockState() &&
                             LOCATION_ERROR_SUCCESS != err) {
                             mAdapter.eraseTrackingSession(mClient, mSessionId);
                         }
@@ -3550,7 +3625,7 @@ GnssAdapter::startTimeBasedTracking(LocationAPI* client, uint32_t sessionId,
     if (!checkAndSetSPEToRunforNHz(tempOptions)) {
         mLocApi->startTimeBasedTracking(tempOptions, new LocApiResponse(*getContext(),
                           [this, client, sessionId] (LocationError err) {
-                if (ENGINE_LOCK_STATE_ENABLED == mLocApi->getEngineLockState() &&
+                if (ENGINE_LOCK_STATE_DISABLED != mLocApi->getEngineLockState() &&
                     LOCATION_ERROR_SUCCESS != err) {
                     eraseTrackingSession(client, sessionId);
                 } else {
@@ -3586,7 +3661,7 @@ GnssAdapter::updateTracking(LocationAPI* client, uint32_t sessionId,
     if(!checkAndSetSPEToRunforNHz(tempOptions)) {
         mLocApi->startTimeBasedTracking(tempOptions, new LocApiResponse(*getContext(),
                           [this, client, sessionId, oldOptions] (LocationError err) {
-                if (ENGINE_LOCK_STATE_ENABLED == mLocApi->getEngineLockState() &&
+                if (ENGINE_LOCK_STATE_DISABLED != mLocApi->getEngineLockState() &&
                     LOCATION_ERROR_SUCCESS != err) {
                     // restore the old LocationOptions
                     saveTrackingSession(client, sessionId, oldOptions);
@@ -4416,12 +4491,10 @@ bool GnssAdapter::needToGenerateNmeaReport(const uint32_t &gpsTimeOfWeekMs,
 }
 
 void GnssAdapter::notifyPreciseLocation() {
-    bool enable = (mDlpFeatureStatusMask & DLP_FEATURE_STATUS_LIBRARY_PRESENT) &&
-            ((mDlpFeatureStatusMask & DLP_FEATURE_ENABLED_BY_QESDK) ||
-             (mDlpFeatureStatusMask & DLP_FEATURE_ENABLED_BY_DEFAULT));
-     getSystemStatus()->eventPreciseLocation(enable);
-     updateClientsEventMask();
-     setTribandState();
+    bool enable = isPreciseEnabled();
+    getSystemStatus()->eventPreciseLocation(enable);
+    updateClientsEventMask();
+    setTribandState();
 }
 void
 GnssAdapter::logLatencyInfo()
@@ -5195,6 +5268,8 @@ GnssAdapter::reportSignalTypeCapabilities(const GnssCapabNotification& gnssCapab
             mGnssCapabNotification(gnssCapabNotification) {}
         inline virtual void proc() const {
             LOC_LOGv("Enter");
+            // cache the data (for VTS only)
+            mAdapter.mGnssCapabNotification = mGnssCapabNotification;
             for (auto it = mAdapter.mClientData.begin(); it != mAdapter.mClientData.end(); ++it) {
                 if (it->second.gnssSignalTypesCb != nullptr) {
                     LOC_LOGv("Calling gnssSignalTypesCb");
@@ -5565,6 +5640,28 @@ bool GnssAdapter::reportGnssAdditionalSystemInfoEvent(
     return true;
 }
 
+void GnssAdapter::reportModemGnssQesdkFeatureStatus(const ModemGnssQesdkFeatureMask& mask) {
+    struct MsgSetModemQesdkFeatureStatus : public LocMsg {
+        GnssAdapter& mAdapter;
+        const ModemGnssQesdkFeatureMask mMask;
+
+        inline MsgSetModemQesdkFeatureStatus(GnssAdapter& adapter,
+                const ModemGnssQesdkFeatureMask& mask) :
+            LocMsg(),
+            mAdapter(adapter),
+            mMask(mask) {}
+
+        inline virtual void proc() const {
+            if (mMask & MODEM_QESDK_FEATURE_DGNSS) {
+                mAdapter.mPpFeatureStatusMask |= MLP_FEATURE_ENABLED_BY_QESDK;
+            } else {
+                mAdapter.mPpFeatureStatusMask &= (~MLP_FEATURE_ENABLED_BY_QESDK);
+            }
+        }
+    };
+    sendMsg(new MsgSetModemQesdkFeatureStatus(*this, mask));
+}
+
 void GnssAdapter::handleQesdkQwesStatusFromEHub(
         const std::unordered_map<LocationQwesFeatureType, bool> &featureMap)
 {
@@ -5577,8 +5674,8 @@ void GnssAdapter::handleQesdkQwesStatusFromEHub(
             mAdapter(adapter),
             mFeatureMap(featureMap) {}
         inline virtual void proc() const {
-            LOC_LOGd("ReportQwesFeatureStatus From Engine Hub, mDlpFeatureStatusMask: %x",
-                    mAdapter.mDlpFeatureStatusMask);
+            LOC_LOGd("ReportQwesFeatureStatus From Engine Hub, mPpFeatureStatusMask: %x",
+                    mAdapter.mPpFeatureStatusMask);
             auto ppeInFeatureMap = mFeatureMap.find(LOCATION_QWES_FEATURE_TYPE_PPE);
             auto dlpQesdkInFeatureMap = mFeatureMap.find(LOCATION_QWES_FEATURE_TYPE_DLP_QESDK);
             auto qfeInFeatureMap = mFeatureMap.find(LOCATION_QWES_FEATURE_TYPE_QDR3);
@@ -5601,18 +5698,18 @@ void GnssAdapter::handleQesdkQwesStatusFromEHub(
             if (ppeInFeatureMap != mFeatureMap.end() || qfeInFeatureMap != mFeatureMap.end()) {
                 LOC_LOGd("ReportQwesFeatureStatus, set library present bit");
                 if (ppeInFeatureMap != mFeatureMap.end()) {
-                    mAdapter.mDlpFeatureStatusMask |= DLP_FEATURE_STATUS_QPPE_LIBRARY_PRESENT;
+                    mAdapter.mPpFeatureStatusMask |= DLP_FEATURE_STATUS_QPPE_LIBRARY_PRESENT;
                 }
                 if (qfeInFeatureMap != mFeatureMap.end()) {
-                    mAdapter.mDlpFeatureStatusMask |= DLP_FEATURE_STATUS_QFE_LIBRARY_PRESENT;
+                    mAdapter.mPpFeatureStatusMask |= DLP_FEATURE_STATUS_QFE_LIBRARY_PRESENT;
                 }
                 if ((ppeInFeatureMap != mFeatureMap.end() && ppeInFeatureMap->second) ||
                         (qfeInFeatureMap != mFeatureMap.end() && qfeInFeatureMap->second)) {
-                    mAdapter.mDlpFeatureStatusMask |= DLP_FEATURE_ENABLED_BY_DEFAULT;
+                    mAdapter.mPpFeatureStatusMask |= DLP_FEATURE_ENABLED_BY_DEFAULT;
                     mAdapter.notifyPreciseLocation();
                     LOC_LOGd("ReportQwesFeatureStatus, set device feature bit true");
                 } else {
-                    mAdapter.mDlpFeatureStatusMask &= (~DLP_FEATURE_ENABLED_BY_DEFAULT);
+                    mAdapter.mPpFeatureStatusMask &= (~DLP_FEATURE_ENABLED_BY_DEFAULT);
                     mAdapter.notifyPreciseLocation();
                     LOC_LOGd("ReportQwesFeatureStatus, set device feature bit false");
                 }
@@ -5620,18 +5717,18 @@ void GnssAdapter::handleQesdkQwesStatusFromEHub(
             } else if (dlpQesdkInFeatureMap != mFeatureMap.end()) {
                 LOC_LOGd("ReportQwesFeatureStatus, set isv feature bit");
                 if (dlpQesdkInFeatureMap->second) {
-                    mAdapter.mDlpFeatureStatusMask |= DLP_FEATURE_ENABLED_BY_QESDK;
+                    mAdapter.mPpFeatureStatusMask |= DLP_FEATURE_ENABLED_BY_QESDK;
                     //Send enable precise location data item to loclauncher to inform
                     //it QPPE engine-service need to launch
-                    if (mAdapter.mDlpFeatureStatusMask & DLP_FEATURE_STATUS_LIBRARY_PRESENT) {
+                    if (mAdapter.mPpFeatureStatusMask & DLP_FEATURE_STATUS_LIBRARY_PRESENT) {
                         mAdapter.notifyPreciseLocation();
                         LOC_LOGd("ReportQwesFeatureStatus, set isv feature bit true");
                     }
                 } else {
-                    mAdapter.mDlpFeatureStatusMask &= (~DLP_FEATURE_ENABLED_BY_QESDK);
+                    mAdapter.mPpFeatureStatusMask &= (~DLP_FEATURE_ENABLED_BY_QESDK);
                     //Send disable precise location data item to loclauncher to inform
                     //it QPPE engine-service need to exit
-                    if (mAdapter.mDlpFeatureStatusMask & DLP_FEATURE_STATUS_LIBRARY_PRESENT) {
+                    if (mAdapter.mPpFeatureStatusMask & DLP_FEATURE_STATUS_LIBRARY_PRESENT) {
                         mAdapter.notifyPreciseLocation();
                         LOC_LOGd("ReportQwesFeatureStatus, set isv feature bit false");
                     }
@@ -5657,6 +5754,12 @@ bool GnssAdapter::reportQwesCapabilities(
         inline virtual void proc() const {
             LOC_LOGi("ReportQwesFeatureStatus After caps %" PRIx64 " ",
                 mAdapter.getCapabilities());
+
+            //Set Mlp feature bit
+            auto iter = mFeatureMap.find(LOCATION_QWES_FEATURE_TYPE_DGNSS);
+            if (iter != mFeatureMap.end() && iter->second) {
+                mAdapter.mPpFeatureStatusMask |= MLP_FEATURE_ENABLED_BY_DEFAULT;
+            }
             mAdapter.broadcastCapabilities(mAdapter.getCapabilities());
         }
     };
@@ -7700,9 +7803,9 @@ void GnssAdapter::configPrecisePositioningCommand(
 
             if (QESDK_FEATURE_ID_EDGNSS == mFeatureId || QESDK_FEATURE_ID_RTK == mFeatureId) {
                 mAdapter.mEngHubProxy->configPrecisePositioning(mFeatureId, mEnable, mAppHash);
-                //call QMI API to configPrecisePositioning
                 mAdapter.mLocApi->configPrecisePositioning(mFeatureId, mEnable, mAppHash);
             } else if (QESDK_FEATURE_ID_RL == mFeatureId) {
+                mAdapter.mLocApi->configPrecisePositioning(mFeatureId, mEnable, mAppHash);
                 mAdapter.mLocApi->configRobustLocation(mEnable, false);
             }
         }
@@ -8182,7 +8285,9 @@ void GnssAdapter::handleDisablePPENtrip() {
 void GnssAdapter::checkUpdateDgnssNtrip(bool isLocationValid) {
     LOC_LOGd("isInSession %d mDgnssState 0x%x isLocationValid %d",
             isInSession(), mDgnssState, isLocationValid);
-    if (isInSession()) {
+    //Enable edgnss -daemon when isInSession and isMlpEnabled.
+    //isMlpEnabled is true when RTK or edgnss feature is enabled.
+    if (isInSession() && isMlpEnabled()) {
         uint64_t curBootTime = getBootTimeMilliSec();
         if (mDgnssState == (DGNSS_STATE_ENABLE_NTRIP_COMMAND | DGNSS_STATE_NO_NMEA_PENDING)) {
             mDgnssState |= DGNSS_STATE_NTRIP_SESSION_STARTED;

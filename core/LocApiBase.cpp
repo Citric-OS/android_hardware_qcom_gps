@@ -194,7 +194,7 @@ volatile int32_t LocApiBase::mMsgTaskRefCount = 0;
 LocApiBase::LocApiBase(LOC_API_ADAPTER_EVENT_MASK_T excludedMask,
                        ContextBase* context) :
     mContext(context),
-    mMask(0), mExcludedMask(excludedMask) {
+    mMask(0), mExcludedMask(excludedMask), mEngineLockState(ENGINE_LOCK_STATE_DISABLED) {
     memset(mLocAdapters, 0, sizeof(mLocAdapters));
 
     android_atomic_inc(&mMsgTaskRefCount);
@@ -539,6 +539,10 @@ void LocApiBase::reportDcMessage(const GnssDcReportInfo& dcReport) {
 void LocApiBase::reportSignalTypeCapabilities(const GnssCapabNotification& gnssCapabNotification) {
     // loop through adapters, and deliver to all adapters.
     TO_ALL_LOCADAPTERS(mLocAdapters[i]->reportSignalTypeCapabilities(gnssCapabNotification));
+}
+
+void LocApiBase::reportModemGnssQesdkFeatureStatus(const ModemGnssQesdkFeatureMask& mask) {
+    TO_ALL_LOCADAPTERS(mLocAdapters[i]->reportModemGnssQesdkFeatureStatus(mask));
 }
 
 void LocApiBase::reportQwesCapabilities

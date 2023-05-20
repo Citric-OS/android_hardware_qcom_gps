@@ -63,7 +63,7 @@ public:
   ScopedAStatus updateNetworkState(const IAGnssRil::NetworkAttributes& attributes) override;
   ScopedAStatus injectNiSuplMessageData(
             const std::vector<uint8_t>& in_msgData, int32_t in_slotIndex) override {
-      return ScopedAStatus::ok();
+      return ScopedAStatus(AStatus_fromServiceSpecificError(STATUS_UNKNOWN_ERROR));
   }
 private:
     Gnss* mGnss = nullptr;
