@@ -232,7 +232,6 @@ void GnssAPIClient::gnssUpdateFlpCallbacks() {
 
 void GnssAPIClient::initLocationOptions() {
     // set default LocationOptions.
-    memset(&mTrackingOptions, 0, sizeof(TrackingOptions));
     mTrackingOptions.size = sizeof(TrackingOptions);
     mTrackingOptions.minInterval = 1000;
     mTrackingOptions.minDistance = 0;
@@ -283,7 +282,6 @@ bool GnssAPIClient::gnssSetPositionMode(IGnss::GnssPositionMode mode,
         minIntervalMs = 1000;
     }
 
-    memset(&mTrackingOptions, 0, sizeof(TrackingOptions));
     mTrackingOptions.size = sizeof(TrackingOptions);
     mTrackingOptions.minInterval = minIntervalMs;
     if (IGnss::GnssPositionMode::MS_ASSISTED == mode ||
@@ -303,10 +301,8 @@ bool GnssAPIClient::gnssSetPositionMode(IGnss::GnssPositionMode mode,
         LOC_LOGd("]: invalid GnssPositionMode: %d", (int)mode);
         retVal = false;
     }
-    if (GNSS_POWER_MODE_INVALID != powerMode) {
-        mTrackingOptions.powerMode = powerMode;
-        mTrackingOptions.tbm = timeBetweenMeasurement;
-    }
+    mTrackingOptions.powerMode = powerMode;
+    mTrackingOptions.tbm = timeBetweenMeasurement;
     mTrackingOptions.locReqEngTypeMask = LOC_REQ_ENGINE_SPE_BIT;
     if (0 == mReportSpeOnly) {
         mTrackingOptions.locReqEngTypeMask = LOC_REQ_ENGINE_FUSED_BIT;
@@ -462,6 +458,7 @@ void GnssAPIClient::updateCapabilities(LocationCapabilitiesMask capabilitiesMask
         data |= IGnssCallback::CAPABILITY_SATELLITE_BLOCKLIST;
     }
     if (capabilitiesMask & LOCATION_CAPABILITIES_MEASUREMENTS_CORRECTION_BIT) {
+        data |= IGnssCallback::CAPABILITY_MEASUREMENT_CORRECTIONS;
         data |= IGnssCallback::CAPABILITY_MEASUREMENT_CORRECTIONS_FOR_DRIVING;
     }
     if (capabilitiesMask & LOCATION_CAPABILITIES_ANTENNA_INFO) {

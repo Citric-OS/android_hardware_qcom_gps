@@ -1789,6 +1789,11 @@ bool SystemStatus::eventDataItemNotify(IDataItemCore* dataitem)
                     SystemStatusLocFeatureStatus(
                         *(static_cast<LocFeatureStatusDataItem*>(dataitem))));
             break;
+        case NETWORK_POSITIONING_STARTED_DATA_ITEM_ID:
+            ret = setIteminReport(mCache.mNlpSessionStarted,
+                    SystemStatusNlpSessionStarted(
+                        *(static_cast<NlpSessionStartedDataItem*>(dataitem))));
+            break;
         default:
             break;
     }
@@ -2062,5 +2067,18 @@ bool SystemStatus::eventLocFeatureStatus(std::unordered_set<int> fids) {
     mSysStatusObsvr.notify({&s.mDataItem});
     return true;
 }
+/******************************************************************************
+@brief      API to update network positioning session state
+
+@param[In]  session state
+
+@return     true when successfully done
+******************************************************************************/
+bool SystemStatus::eventNlpSessionStatus(bool nlpStarted) {
+    SystemStatusNlpSessionStarted s(nlpStarted);
+    mSysStatusObsvr.notify({&s.mDataItem});
+    return true;
+}
+
 } // namespace loc_core
 

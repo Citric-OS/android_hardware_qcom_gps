@@ -104,7 +104,7 @@ private:
     bool mTracking;
 
     static void gnssMeasurementDied(void* cookie);
-    void startTracking(GnssPowerMode powerMode = GNSS_POWER_MODE_INVALID,
+    void startTracking(GnssPowerMode powerMode = GNSS_POWER_MODE_DEFAULT,
                        uint32_t timeBetweenMeasurement = GPS_DEFAULT_FIX_INTERVAL_MS);
     void convertGnssData(const GnssMeasurementsNotification& in, GnssData& out);
     void convertGnssMeasurement(const GnssMeasurementsData& in, GnssMeasurement& out);

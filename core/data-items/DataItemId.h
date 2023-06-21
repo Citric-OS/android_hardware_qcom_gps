@@ -114,6 +114,7 @@ typedef enum e_DataItemId {
 
     // 29 -
     LOC_FEATURE_STATUS_DATA_ITEM_ID,
+    NETWORK_POSITIONING_STARTED_DATA_ITEM_ID,
 
     MAX_DATA_ITEM_ID_1_1,
 } DataItemId;

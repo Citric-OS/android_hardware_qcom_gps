@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022, 2023 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -58,9 +58,6 @@ virtual ~MeasurementCorrectionsInterface();
 ScopedAStatus setCorrections(const MeasurementCorrections& in_corrections) override;
 ScopedAStatus setCallback(const shared_ptr<IMeasurementCorrectionsCallback>& in_callback) override;
 void setCapabilitiesCb(GnssMeasurementCorrectionsCapabilitiesMask capabilities);
-
-/* Data call setup callback passed down to GNSS HAL implementation */
-static void measCorrSetCapabilitiesCb(GnssMeasurementCorrectionsCapabilitiesMask capabilities);
 
 private:
 mutable std::mutex mMutex;

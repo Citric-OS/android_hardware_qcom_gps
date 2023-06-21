@@ -410,6 +410,9 @@ public:
 
     virtual void configPrecisePositioning(uint32_t featureId, bool enable,
             std::string appHash, LocApiResponse* adapterResponse=nullptr);
+    virtual void configMerkleTree(mgpOsnmaPublicKeyAndMerkleTreeStruct* merkleTree,
+            LocApiResponse* adapterResponse=nullptr);
+    virtual void configOsnmaEnablement(bool enable, LocApiResponse* adapterResponse=nullptr);
 };
 
 class ElapsedRealtimeEstimator {
