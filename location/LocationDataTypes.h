@@ -436,6 +436,9 @@ typedef enum {
     // This indicates wifi RTT positioning is
     // enabled by QWES license.
     LOCATION_QWES_FEATURE_TYPE_RTT_POSITIONING,
+    // This indicates EP can do SSR2OSR correction data
+    // parseing
+    LOCATION_FEATURE_TYPE_CORR_DATA_PARSER,
     // Max value
     LOCATION_QWES_FEATURE_TYPE_MAX
 } LocationQwesFeatureTypes;
@@ -3046,5 +3049,21 @@ typedef struct {
     mgpOsnmaPublicKeyT   zPublicKey;  /* public key */
     mgpOsnmaMerkleTreeT  zMerkleTree; /* Merkle Tree Nodes */
 } mgpOsnmaPublicKeyAndMerkleTreeStruct;
+
+typedef void* QDgnssListenerHDL;
+
+typedef std::function<void(
+    bool    sessionActive
+)> QDgnssSessionActiveCb;
+
+typedef uint16_t QDgnss3GppSourceBitMask;
+#define QDGNSS_3GPP_SOURCE_UNKNOWN          0X00
+#define QDGNSS_3GPP_EP_PARSER_AVAIL         0X01
+#define QDGNSS_3GPP_SOURCE_AVAIL            0X02
+#define QDGNSS_3GPP_SOURCE_ACTIVE           0X04
+
+typedef std::function<void(
+    QDgnss3GppSourceBitMask    modem3GppSourceMask
+)> QDgnssModem3GppAvailCb;
 
 #endif /* LOCATIONDATATYPES_H */

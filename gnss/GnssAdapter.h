@@ -212,17 +212,14 @@ typedef std::function<void(
     uint64_t gnssEnergyConsumedFromFirstBoot
 )> GnssEnergyConsumedCallback;
 
-typedef void* QDgnssListenerHDL;
-typedef std::function<void(
-    bool    sessionActive
-)> QDgnssSessionActiveCb;
-
 struct CdfwInterface {
-    void (*startDgnssApiService)(const MsgTask& msgTask);
+    void (*startDgnssApiService)(const MsgTask& msgTask,
+            QDgnssModem3GppAvailCb modem3GppAvailCb);
     QDgnssListenerHDL (*createUsableReporter)(
             QDgnssSessionActiveCb sessionActiveCb);
     void (*destroyUsableReporter)(QDgnssListenerHDL handle);
     void (*reportUsable)(QDgnssListenerHDL handle, bool usable);
+    void (*updateTrackingStatus)(bool trackingActive);
 };
 
 typedef uint16_t  DGnssStateBitMask;
@@ -299,7 +296,9 @@ class GnssAdapter : public LocAdapterBase {
     const CdfwInterface* mCdfwInterface;
     bool mDGnssNeedReport;
     bool mDGnssDataUsage;
+    QDgnss3GppSourceBitMask m3GppSourceMask;
     void reportDGnssDataUsable(const GnssSvMeasurementSet &svMeasurementSet);
+    void updateModme3GppSourceStatus(QDgnss3GppSourceBitMask modem3GppSourceMask);
 
     /* ==== ODCPI ========================================================================== */
     typedef uint8_t OdcpiStateMask;
@@ -397,6 +396,9 @@ class GnssAdapter : public LocAdapterBase {
 
     /*==== Signal type capabilities ====================================================*/
     GnssCapabNotification mGnssCapabNotification;
+
+    /*==== Qesdk Feature Status ========================================================*/
+    std::string mAppHash;
 
 protected:
 
@@ -610,7 +612,10 @@ public:
         return mPpFeatureStatusMask &
             (MLP_FEATURE_ENABLED_BY_DEFAULT | MLP_FEATURE_ENABLED_BY_QESDK);
     }
+    bool isStandAloneCDParserPELib();
+    bool isEngineServiceEnable();
     void initCDFWService();
+
     void odcpiTimerExpireEvent();
 
     /* ==== REPORTS ======================================================================== */

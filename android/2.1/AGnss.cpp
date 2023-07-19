@@ -17,6 +17,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+SPDX-License-Identifier: BSD-3-Clause-Clear
+*/
 
 #define LOG_TAG "LocSvc_AGnssInterface"
 
@@ -56,7 +60,11 @@ void AGnss::statusCb(AGpsExtType type, AGpsStatusValue status) {
     IAGnssCallback::AGnssStatusValue aStatus;
 
     // cache the AGps Type
-    mType = type;
+    if (type > LOC_AGPS_TYPE_INVALID && type <= LOC_AGPS_TYPE_SUPL_ES) {
+        mMutex.lock();
+        mType = type;
+        mMutex.unlock();
+    }
 
     switch (type) {
     case AGPS_TYPE_SUPL:
@@ -151,9 +159,12 @@ Return<bool> AGnss::dataConnOpen(uint64_t /*networkHandle*/, const hidl_string& 
     }
 
     std::string apnString(apn.c_str());
+    mMutex.lock();
+    auto agpsType = mType;
+    mMutex.unlock();
     // During Emergency SUPL, an apn name of "sos" means that no
     // apn was found, like in the simless case, so apn is cleared
-    if (LOC_AGPS_TYPE_SUPL_ES == mType && "sos" == apnString) {
+    if (LOC_AGPS_TYPE_SUPL_ES == agpsType && "sos" == apnString) {
         LOC_LOGD("dataConnOpen APN name = [sos] cleared");
         apnString.clear();
     }

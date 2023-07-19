@@ -60,6 +60,10 @@ IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+/*
+Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+SPDX-License-Identifier: BSD-3-Clause-Clear
+*/
 #ifndef LOCATION_API_CLINET_BASE_H
 #define LOCATION_API_CLINET_BASE_H
 
@@ -255,6 +259,7 @@ public:
     uint32_t locAPIUpdateSessionOptions(
             uint32_t id, uint32_t sessionMode, TrackingOptions&& trackingOptions);
     uint32_t locAPIGetBatchedLocations(uint32_t id, size_t count);
+    void locAPIRemoveAllSessions();
 
     uint32_t locAPIAddGeofences(size_t count, uint32_t* ids,
             GeofenceOption* options, GeofenceInfo* data);

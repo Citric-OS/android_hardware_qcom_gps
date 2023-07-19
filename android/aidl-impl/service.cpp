@@ -20,7 +20,7 @@
 /*
 Changes from Qualcomm Innovation Center are provided under the following license:
 
-Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -53,6 +53,7 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <unistd.h>
 #include <aidl/android/hardware/gnss/IGnss.h>
 #include <hidl/LegacySupport.h>
 #include "loc_cfg.h"
@@ -85,7 +86,20 @@ typedef void createQesdkHandle();
 
 using GnssAidl = ::android::hardware::gnss::aidl::implementation::Gnss;
 
+static void sleepIfInShutdown() {
+    char shutdownProp[PROPERTY_VALUE_MAX] = {};
+    const char propName[] = "sys.shutdown.requested";
+    const char propDefault[] = "N/A";
+    property_get(propName, shutdownProp, propDefault);
+    if (strncmp(shutdownProp, propDefault, sizeof(propDefault)-1) != 0) {
+        ALOGW("%s, %s was set %s, SLEEP!!!", __FUNCTION__, propName, shutdownProp);
+        sleep(UINT_MAX);
+    }
+}
+
 int main() {
+    sleepIfInShutdown();
+
     ABinderProcess_setThreadPoolMaxThreadCount(1);
     ABinderProcess_startThreadPool();
     ALOGI("%s, start Gnss HAL process", __FUNCTION__);

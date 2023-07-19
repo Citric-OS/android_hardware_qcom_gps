@@ -31,6 +31,10 @@ IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+/*
+Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+SPDX-License-Identifier: BSD-3-Clause-Clear
+*/
 #include <aidl/android/hardware/gnss/BnAGnss.h>
 #include <aidl/android/hardware/gnss/IAGnssCallback.h>
 #include "Gnss.h"
@@ -73,9 +77,12 @@ void AGnss::statusCb(AGpsExtType type, LocAGpsStatusValue status) {
 
     IAGnssCallback::AGnssType  aType;
     IAGnssCallback::AGnssStatusValue aStatus;
-
     // cache the AGps Type
-    mType = type;
+    if (type > LOC_AGPS_TYPE_INVALID && type <= LOC_AGPS_TYPE_SUPL_ES) {
+        mMutex.lock();
+        mType = type;
+        mMutex.unlock();
+    }
 
     switch (type) {
     case LOC_AGPS_TYPE_SUPL:
@@ -170,9 +177,12 @@ ScopedAStatus AGnss::dataConnOpen(int64_t networkHandle, const std::string& apn,
     }
 
     std::string apnString(apn.c_str());
+    mMutex.lock();
+    auto agpsType = mType;
+    mMutex.unlock();
     // During Emergency SUPL, an apn name of "sos" means that no
     // apn was found, like in the simless case, so apn is cleared
-    if (LOC_AGPS_TYPE_SUPL_ES == mType && "sos" == apnString) {
+    if (LOC_AGPS_TYPE_SUPL_ES == agpsType && "sos" == apnString) {
         LOC_LOGd("dataConnOpen APN name = [sos] cleared");
         apnString.clear();
     }

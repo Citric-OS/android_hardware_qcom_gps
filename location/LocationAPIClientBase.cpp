@@ -579,6 +579,13 @@ uint32_t LocationAPIClientBase::locAPIStopSession(uint32_t id)
     return retVal;
 }
 
+void LocationAPIClientBase::locAPIRemoveAllSessions() {
+    std::vector<uint32_t> idsVec = mSessionBiDict.getAllIds();
+    for (int i=0; i<idsVec.size(); ++i) {
+        locAPIStopSession(idsVec[i]);
+    }
+}
+
 uint32_t LocationAPIClientBase::locAPIUpdateSessionOptions(
         uint32_t id, uint32_t sessionMode, TrackingOptions&& options)
 {

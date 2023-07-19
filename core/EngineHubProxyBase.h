@@ -200,7 +200,7 @@ typedef EngineHubProxyBase* (getEngHubProxyFn)(
         GnssAdapterReqAidingDataCb reqAidingDataCb,
         GnssAdapterUpdateNHzRequirementCb updateNHzRequirementCb,
         GnssAdapterUpdateQwesFeatureStatusCb updateQwesFeatureStatusCb,
-        std::function<bool()> preciseEnabled);
+        std::function<bool()> engineServiceEnabled);
 
 } // namespace loc_core
 
