@@ -144,7 +144,8 @@ static void measCorrClose();
 static uint32_t getAntennaInfo(AntennaInfoCallback* antennaInfoCallback);
 static uint32_t configEngineRunState(PositioningEngineMask engType, LocEngineRunState engState);
 static uint32_t configOutputNmeaTypes(GnssNmeaTypesMask enabledNmeaTypes,
-                                      GnssGeodeticDatumType nmeaDatumType);
+                                      GnssGeodeticDatumType nmeaDatumType,
+                                      LocReqEngineTypeMask locReqEngTypeMask);
 static void powerIndicationInit(const powerIndicationCb powerIndicationCallback);
 static void powerIndicationRequest();
 static void setAddressRequestCb(const std::function<void(const Location&)> addressRequestCb);
@@ -680,10 +681,12 @@ static uint32_t configEngineRunState(PositioningEngineMask engType, LocEngineRun
 }
 
 static uint32_t configOutputNmeaTypes (GnssNmeaTypesMask enabledNmeaTypes,
-                                       GnssGeodeticDatumType nmeaDatumType) {
+                                       GnssGeodeticDatumType nmeaDatumType,
+                                       LocReqEngineTypeMask locReqEngTypeMask) {
     if (NULL != gGnssAdapter) {
         return gGnssAdapter->configOutputNmeaTypesCommand(enabledNmeaTypes,
-                                                          nmeaDatumType);
+                                                          nmeaDatumType,
+                                                          locReqEngTypeMask);
     } else {
         return 0;
     }

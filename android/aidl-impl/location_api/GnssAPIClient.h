@@ -131,7 +131,6 @@ private:
 
     std::mutex mMutex;
     bool mTracking;
-    bool mReportSpeOnly;
     TrackingOptions mTrackingOptions;
     LocationAPIControlClient* mControlClient;
     LocationCapabilitiesMask mLocationCapabilitiesMask;
