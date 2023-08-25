@@ -979,6 +979,7 @@ public:
     bool eventPreciseLocation(bool preciseLocation);
     bool eventLocFeatureStatus(std::unordered_set<int> fids);
     bool eventNlpSessionStatus(bool nlpStarted);
+    bool eventGpsEnabled(bool gpsEnabled);
 };
 
 } // namespace loc_core
