@@ -921,6 +921,8 @@ enum GnssSignalTypeBits {
     GNSS_SIGNAL_BEIDOU_B2BI         = (1<<22),
     /** BEIDOU B2B_Q RF Band */
     GNSS_SIGNAL_BEIDOU_B2BQ         = (1<<23),
+    /** NAVIC L1 RF Band */
+    GNSS_SIGNAL_NAVIC_L1            = (1<<24),
 };
 
 #define GNSS_SIGNAL_TYPE_MASK_ALL\
@@ -931,7 +933,7 @@ enum GnssSignalTypeBits {
      GNSS_SIGNAL_BEIDOU_B2AI | GNSS_SIGNAL_QZSS_L1CA | GNSS_SIGNAL_QZSS_L1S |\
      GNSS_SIGNAL_QZSS_L2| GNSS_SIGNAL_QZSS_L5 | GNSS_SIGNAL_SBAS_L1 |\
      GNSS_SIGNAL_NAVIC_L5 | GNSS_SIGNAL_BEIDOU_B2AQ | GNSS_SIGNAL_BEIDOU_B2BI |\
-     GNSS_SIGNAL_BEIDOU_B2BQ)
+     GNSS_SIGNAL_BEIDOU_B2BQ | GNSS_SIGNAL_NAVIC_L1)
 
 enum Gnss_LocSvSystemEnumType {
     GNSS_LOC_SV_SYSTEM_UNKNOWN                = 0,
@@ -979,7 +981,8 @@ enum Gnss_LocSignalEnumType {
     GNSS_LOC_SIGNAL_TYPE_BEIDOU_B2A_Q = 19,     /**<  BEIDOU B2A_Q RF Band  */
     GNSS_LOC_SIGNAL_TYPE_BEIDOU_B2B_I = 20,     /**<  BeiDou B2B_I RF band (data) */
     GNSS_LOC_SIGNAL_TYPE_BEIDOU_B2B_Q = 21,     /**< BeiDou B2B_Q RF band (Pilot)*/
-    GNSS_LOC_MAX_NUMBER_OF_SIGNAL_TYPES = 22    /**<  Maximum number of signal types */
+    GNSS_LOC_SIGNAL_TYPE_NAVIC_L1 = 22,         /**<  NAVIC L1 RF Band */
+    GNSS_LOC_MAX_NUMBER_OF_SIGNAL_TYPES = 23    /**<  Maximum number of signal types */
 };
 
 typedef uint32_t PositioningEngineMask;
@@ -1685,6 +1688,7 @@ struct GnssNiNotification {
 #define QZSS_L5_Q_CARRIER_FREQUENCY     (1176450000.0)
 #define SBAS_L1_CA_CARRIER_FREQUENCY    (1575420000.0)
 #define NAVIC_L5_CARRIER_FREQUENCY      (1176450000.0)
+#define NAVIC_L1_CARRIER_FREQUENCY      (1575420000.0)
 
 struct GnssSv {
     uint32_t size;       // set to sizeof(GnssSv)
@@ -1696,7 +1700,7 @@ struct GnssSv {
     //    - For QZSS:    193 to 197
     //    - For BDS:     201 to 263
     //    - For GAL:     301 to 336
-    //    - For NAVIC:   401 to 414
+    //    - For NAVIC:   401 to 420
     uint16_t svId;
     GnssSvType type;   // type of SV (GPS, SBAS, GLONASS, QZSS, BEIDOU, GALILEO, NAVIC)
     float cN0Dbhz;     // signal strength
