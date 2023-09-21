@@ -136,6 +136,48 @@ static void sleepIfInShutdown() {
     }
 }
 
+#define GNSS_AUTO_POWER_LIBNAME  "libgnssauto_power.so"
+#define GNSS_WEAR_POWER_LIBNAME  "libgnsswear_power.so"
+
+typedef const void* (*gnssPowerHandler)(void);
+
+int initializeGnssAutoPowerHandler() {
+
+    void * handle = nullptr;
+    gnssPowerHandler getter = (gnssPowerHandler) dlGetSymFromLib(handle, GNSS_AUTO_POWER_LIBNAME,
+                                                                 "initGnssAutoPowerHandler");
+    if (nullptr != getter) {
+        getter();
+        ALOGI("GnssAutoPowerHandler Initialized!");
+        return 0;
+    }
+    return -1;
+}
+
+int initializeGnssWearPowerHandler() {
+
+    void * handle = nullptr;
+    gnssPowerHandler getter = (gnssPowerHandler) dlGetSymFromLib(handle, GNSS_WEAR_POWER_LIBNAME,
+                                                                 "initGnssWearPowerHandler");
+    if (nullptr != getter) {
+        getter();
+        ALOGI("GnssWearPowerHandler Initialized!");
+        return 0;
+    }
+    return -1;
+}
+
+void initializeGnssPowerHandler() {
+
+    if (0 != initializeGnssAutoPowerHandler()) {
+        ALOGW("Gnss Auto Power Handler unavailable.");
+
+        if (0 != initializeGnssWearPowerHandler()) {
+            ALOGW("Gnss Wear Power Handler unavailable.");
+        }
+    }
+}
+
 int main() {
     sleepIfInShutdown();
 #if defined __LIBFUZZON__
@@ -182,6 +224,8 @@ int main() {
         ALOGI("start LocAidl service");
         (*aidlMainMethod)(0, NULL);
     }
+    // Load gnss power handler
+    initializeGnssPowerHandler();
     // Loc AIDL service end
     ABinderProcess_joinThreadPool();
 
