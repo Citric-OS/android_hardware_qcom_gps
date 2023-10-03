@@ -30,7 +30,7 @@
 /*
 Changes from Qualcomm Innovation Center are provided under the following license:
 
-Copyright (c) 2022, 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -330,6 +330,13 @@ public:
                        sQwesFeatureMask |= LOCATION_CAPABILITIES_QWES_WIFI_RTT_POSITIONING;
                    } else {
                        sQwesFeatureMask &= ~LOCATION_CAPABILITIES_QWES_WIFI_RTT_POSITIONING;
+                   }
+               break;
+               case LOCATION_QWES_FEATURE_NLOS_ML20:
+                   if (itr->second) {
+                       sQwesFeatureMask |= LOCATION_CAPABILITIES_NLOS_ML20;
+                   } else {
+                       sQwesFeatureMask &= ~LOCATION_CAPABILITIES_NLOS_ML20;
                    }
                break;
            }

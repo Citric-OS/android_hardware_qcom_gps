@@ -74,7 +74,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define GNSS_NI_REQUESTOR_MAX  (256)
 #define GNSS_NI_MESSAGE_ID_MAX (2048)
-#define GNSS_SV_MAX            (144)
+#define GNSS_SV_MAX            (176)
 #define GNSS_MEASUREMENTS_MAX  (144)
 #define GNSS_BANDS_MAX         (32)
 #define DGNSS_STATION_ID_MAX   (3)
@@ -387,6 +387,8 @@ typedef uint64_t LocationCapabilitiesMask;
 #define   LOCATION_CAPABILITIES_GNSS_BANDS_BIT                   (1ULL<<34)
 // This mask indicates modem 3GPP source is available.
 #define   LOCATION_CAPABILITIES_MODEM_3GPP_AVAIL                 (1ULL<<35)
+// This mask indicates PR ML inference is present
+#define   LOCATION_CAPABILITIES_NLOS_ML20                        (1ULL<<36)
 
 typedef uint8_t LocationQwesFeatureType;
 typedef enum {
@@ -439,6 +441,8 @@ typedef enum {
     // This indicates EP can do SSR2OSR correction data
     // parseing
     LOCATION_FEATURE_TYPE_CORR_DATA_PARSER,
+    // This indicates PR meas ML infernece is enabled
+    LOCATION_QWES_FEATURE_NLOS_ML20,
     // Max value
     LOCATION_QWES_FEATURE_TYPE_MAX
 } LocationQwesFeatureTypes;
@@ -2684,6 +2688,15 @@ struct XtraConfigParams {
     uint32_t xtraIntegrityDownloadIntervalMinute;
     /** Level of debug log messages that will be logged. */
     DebugLogLevel xtraDaemonDebugLogLevel;
+    /** URL of NTS KE Server. if provided, shall be complete and
+     *  shall include the port number. Max of 128 bytes,
+     *  including null-terminating byte will be supported.
+     *  Valid NTS KE server URL should start with "https://".
+     *  If not specified, then device will use
+     *  default URL of https://nts.xtracloud.net:4460. */
+    char ntsKeServerURL[128];
+    /** To indicate if Diag logging to be enabled for XTRA */
+    uint32_t xtraDaemonDiagLoggingStatus;
 };
 
 enum XtraStatusUpdateType {
