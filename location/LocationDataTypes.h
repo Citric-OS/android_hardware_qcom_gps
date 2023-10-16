@@ -1016,9 +1016,27 @@ enum LocEngineRunState {
 typedef uint64_t GnssDataMask;
 enum GnssDataBits {
     // Jammer Indicator is available
-    GNSS_LOC_DATA_JAMMER_IND_BIT = (1ULL << 0),
+    GNSS_LOC_DATA_JAMMER_IND_BIT    = (1ULL << 0),
     // AGC is available
-    GNSS_LOC_DATA_AGC_BIT = (1ULL << 1)
+    GNSS_LOC_DATA_AGC_BIT           = (1ULL << 1),
+    // AGC status for L1 band is available.
+    GNSS_LOC_DATA_AGC_STATUS_L1_BIT = (1ULL << 2),
+    // AGC status for L2 band is available.
+    GNSS_LOC_DATA_AGC_STATUS_L2_BIT = (1ULL << 3),
+    // AGC status for L5 band is available.
+    GNSS_LOC_DATA_AGC_STATUS_L5_BIT = (1ULL << 4),
+};
+
+/** Indicate RF Automatic Gain Control Status <br/>   */
+enum AgcStatus {
+    /**< AGC status is unknown <br/> */
+    AGC_STATUS_UNKNOWN                              = 0,
+    /**< AGC status is No saturation <br/> */
+    AGC_STATUS_NO_SATURATION                        = 1,
+    /**< AGC status is Front end gain maximum saturation <br/> */
+    AGC_STATUS_FRONT_END_GAIN_MAXIMUM_SATURATION    = 2,
+    /**< AGC status is Front end gain minimum saturation <br/> */
+    AGC_STATUS_FRONT_END_GAIN_MINIMUM_SATURATION    = 3,
 };
 
 typedef uint32_t GnssSystemTimeStructTypeFlags;
@@ -1883,6 +1901,9 @@ struct GnssDataNotification {
     GnssDataMask  gnssDataMask[GNSS_LOC_MAX_NUMBER_OF_SIGNAL_TYPES];  // bitwise OR of GnssDataBits
     double        jammerInd[GNSS_LOC_MAX_NUMBER_OF_SIGNAL_TYPES];     // Jammer Indication
     double        agc[GNSS_LOC_MAX_NUMBER_OF_SIGNAL_TYPES];           // Automatic gain control
+    AgcStatus     agcStatusL1; // RF Automatic gain control status for L1 band.
+    AgcStatus     agcStatusL2; // RF Automatic gain control status for L2 band.
+    AgcStatus     agcStatusL5; // RF Automatic gain control status for L5 band.
 };
 
 struct GnssMeasurementsAgc {
@@ -1897,6 +1918,9 @@ struct GnssMeasurementsNotification {
     uint32_t count;        // number of items in GnssMeasurements array
     GnssMeasurementsData measurements[GNSS_MEASUREMENTS_MAX];
     GnssMeasurementsClock clock; // clock
+    AgcStatus     agcStatusL1; // RF Automatic gain control status for L1 band.
+    AgcStatus     agcStatusL2; // RF Automatic gain control status for L2 band.
+    AgcStatus     agcStatusL5; // RF Automatic gain control status for L5 band.
     bool isFullTracking;
     uint32_t agcCount;     // number of items in GnssMeasurementsAgc array
     GnssMeasurementsAgc gnssAgc[GNSS_BANDS_MAX];
