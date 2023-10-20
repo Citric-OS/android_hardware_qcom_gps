@@ -859,7 +859,7 @@ typedef enum {
 // if necessary.
 #define DEFAULT_IMPL(rtv)                                     \
 {                                                             \
-    LOC_LOGD("%s: default implementation invoked", __func__); \
+    LOC_LOGA("%s: default implementation invoked", __func__); \
     return rtv;                                               \
 }
 
@@ -1351,6 +1351,8 @@ typedef struct
     Gnss_LocSVTimeSpeedStructType   svTimeSpeed;
     /**< Unfiltered SV Time and Speed information
     */
+    uint8_t dopplerAccelValid;
+    /**<   Validity for Doppler acceleration. */
     float                           dopplerAccel;
     /**< Satellite Doppler Accelertion\n
          - Units: Hz/s \n
