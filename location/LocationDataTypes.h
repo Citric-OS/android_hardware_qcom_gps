@@ -380,15 +380,17 @@ typedef uint64_t LocationCapabilitiesMask;
 // enabled by QWES license.
 #define   LOCATION_CAPABILITIES_QWES_WIFI_RTT_POSITIONING        (1ULL<<31)
 // This mask indicates wifi RSSI positioning is supported.
-#define   LOCATION_CAPABILITIES_WIFI_RSSI_POSITIONING            (1ULL<<32)
+#define   LOCATION_CAPABILITIES_WIFI_RSSI_POSITIONING                 (1ULL<<32)
 // This mask indicates wifi RTT positioning is supported.
-#define   LOCATION_CAPABILITIES_WIFI_RTT_POSITIONING             (1ULL<<33)
+#define   LOCATION_CAPABILITIES_WIFI_RTT_POSITIONING                  (1ULL<<33)
 // support GNSS bands
-#define   LOCATION_CAPABILITIES_GNSS_BANDS_BIT                   (1ULL<<34)
+#define   LOCATION_CAPABILITIES_GNSS_BANDS_BIT                        (1ULL<<34)
 // This mask indicates modem 3GPP source is available.
-#define   LOCATION_CAPABILITIES_MODEM_3GPP_AVAIL                 (1ULL<<35)
+#define   LOCATION_CAPABILITIES_MODEM_3GPP_AVAIL                      (1ULL<<35)
 // This mask indicates PR ML inference is present
-#define   LOCATION_CAPABILITIES_NLOS_ML20                        (1ULL<<36)
+#define   LOCATION_CAPABILITIES_NLOS_ML20                             (1ULL<<36)
+// This mask indicates if NHz is enableD
+#define   LOCATION_CAPABILITIES_QWES_GNSS_NHZ                         (1ULL<<37)
 
 typedef uint8_t LocationQwesFeatureType;
 typedef enum {
@@ -397,54 +399,59 @@ typedef enum {
     LOCATION_QWES_FEATURE_TYPE_CARRIER_PHASE                 = 1,
     // Modem supports SV Polynomial for tightly coupled external
     // DR support. This is a Standalone Feature.
-    LOCATION_QWES_FEATURE_TYPE_SV_POLYNOMIAL,
+    LOCATION_QWES_FEATURE_TYPE_SV_POLYNOMIAL                 = 2,
     // Modem supports SV Ephemeris for tightly coupled external
     // PPE support. This is a Standalone Feature.
-    LOCATION_QWES_FEATURE_TYPE_SV_EPH,
+    LOCATION_QWES_FEATURE_TYPE_SV_EPH                        = 3,
     // Modem supports GNSS Single Frequency feature. This is a
     // Standalone Feature.
-    LOCATION_QWES_FEATURE_TYPE_GNSS_SINGLE_FREQUENCY,
+    LOCATION_QWES_FEATURE_TYPE_GNSS_SINGLE_FREQUENCY         = 4,
     // Modem supports GNSS Multi Frequency feature. Multi Frequency
     // enables Single frequency also.
-    LOCATION_QWES_FEATURE_TYPE_GNSS_MULTI_FREQUENCY,
+    LOCATION_QWES_FEATURE_TYPE_GNSS_MULTI_FREQUENCY          = 5,
     // This indicates Time and Frequency status.
-    LOCATION_QWES_FEATURE_TYPE_TIME_FREQUENCY,
+    LOCATION_QWES_FEATURE_TYPE_TIME_FREQUENCY                = 6,
     // This indicates Time Uncertainty  status.
-    LOCATION_QWES_FEATURE_TYPE_TIME_UNCERTAINTY,
+    LOCATION_QWES_FEATURE_TYPE_TIME_UNCERTAINTY              = 7,
     // This indicates Clock Estimate status.
-    LOCATION_QWES_FEATURE_TYPE_CLOCK_ESTIMATE,
+    LOCATION_QWES_FEATURE_TYPE_CLOCK_ESTIMATE                = 8,
     // This mask indicates that PPE (Precise Positioning Engine)
     // library is enabled or Precise Positioning Framework (PPF)
     // is available. This bundle includes features for Carrier
     // Phase and SV Ephermeris.
-    LOCATION_QWES_FEATURE_TYPE_PPE,
+    LOCATION_QWES_FEATURE_TYPE_PPE                           = 9,
     // This indicates QDR2_C license bundle is enabled. This
     // bundle includes features for SV Polynomial.
-    LOCATION_QWES_FEATURE_TYPE_QDR2,
+    LOCATION_QWES_FEATURE_TYPE_QDR2                          = 10,
     // This indicates QDR3_C license bundle is enabled. This
     // bundle includes features for SV Polynomial.
-    LOCATION_QWES_FEATURE_TYPE_QDR3,
+    LOCATION_QWES_FEATURE_TYPE_QDR3                          = 11,
     // This indicates VEPP license bundle is enabled. VEPP
     // bundle include Carrier Phase and SV Polynomial features.
-    LOCATION_QWES_FEATURE_TYPE_VPE,
+    LOCATION_QWES_FEATURE_TYPE_VPE                           = 12,
     // This indicates DGNSS license is enabled.
-    LOCATION_QWES_FEATURE_TYPE_DGNSS,
+    LOCATION_QWES_FEATURE_TYPE_DGNSS                         = 13,
     // This indicates DLP feature is enabled by QESDK APP
     // license
-    LOCATION_QWES_FEATURE_TYPE_DLP_QESDK,
-    // This indicates wifi RSSI positioning is
-    // enabled by QWES license.
-    LOCATION_QWES_FEATURE_TYPE_RSSI_POSITIONING,
-    // This indicates wifi RTT positioning is
-    // enabled by QWES license.
-    LOCATION_QWES_FEATURE_TYPE_RTT_POSITIONING,
+    LOCATION_QWES_FEATURE_TYPE_DLP_QESDK                     = 14,
+    // This indicates MLP feature is enabled by QESDK APP
+    // license
+    LOCATION_QWES_FEATURE_TYPE_MLP_QESDK                     = 15,
     // This indicates EP can do SSR2OSR correction data
     // parseing
-    LOCATION_FEATURE_TYPE_CORR_DATA_PARSER,
+    LOCATION_FEATURE_TYPE_CORR_DATA_PARSER                   = 16,
     // This indicates PR meas ML infernece is enabled
-    LOCATION_QWES_FEATURE_NLOS_ML20,
+    LOCATION_QWES_FEATURE_NLOS_ML20                          = 17,
+    // This indicates wifi RSSI positioning is
+    // enabled by QWES license.
+    LOCATION_QWES_FEATURE_TYPE_RSSI_POSITIONING              = 18,
+    // This indicates wifi RTT positioning is
+    // enabled by QWES license.
+    LOCATION_QWES_FEATURE_TYPE_RTT_POSITIONING               = 19,
+    // This indicates if NHz feature is supported
+    LOCATION_QWES_FEATURE_STATUS_GNSS_NHZ                    = 20,
     // Max value
-    LOCATION_QWES_FEATURE_TYPE_MAX
+    LOCATION_QWES_FEATURE_TYPE_MAX                           = 21
 } LocationQwesFeatureTypes;
 
 typedef uint64_t LocationHwCapabilitiesMask;
