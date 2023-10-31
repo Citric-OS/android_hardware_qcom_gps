@@ -7284,6 +7284,7 @@ GnssAdapter::configLeverArm(uint32_t sessionId,
                             const LeverArmConfigInfo& configInfo) {
 
     LocationError err = LOCATION_ERROR_NOT_SUPPORTED;
+
     // save the lever ARM config info for translating SPE positions from
     // GNSS antenna based to VRP based
     if (configInfo.leverArmValidMask & LEVER_ARM_TYPE_GNSS_TO_VRP_BIT) {
@@ -7296,6 +7297,8 @@ GnssAdapter::configLeverArm(uint32_t sessionId,
     if (true == mEngHubLoadSuccessful) {
         if (false == mEngHubProxy->configLeverArm(configInfo)) {
             err = LOCATION_ERROR_GENERAL_FAILURE;
+        } else {
+            err = LOCATION_ERROR_SUCCESS;
         }
     }
 
