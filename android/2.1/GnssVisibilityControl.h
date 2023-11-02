@@ -68,7 +68,7 @@ struct GnssVisibilityControl : public IGnssVisibilityControl {
     Return<bool> setCallback(const ::android::sp<::android::hardware::gnss::visibility_control::V1_0::IGnssVisibilityControlCallback>& callback) override;
 
     /* Data call setup callback passed down to GNSS HAL implementation */
-    void nfwStatusCb(GnssNfwNotification notification);
+    void nfwStatusCb(const GnssNfwNotification& notification);
     bool isInEmergencySession();
 
 private:

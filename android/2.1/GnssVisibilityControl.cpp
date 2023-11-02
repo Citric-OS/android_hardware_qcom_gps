@@ -56,7 +56,7 @@ GnssVisibilityControl::GnssVisibilityControl(Gnss* gnss) : mGnss(gnss) {
     memset(&locCtrlCbs, 0, sizeof(locCtrlCbs));
     locCtrlCbs.size = sizeof(LocationControlCallbacks);
 
-    locCtrlCbs.nfwStatusCb = [this](GnssNfwNotification notification) {
+    locCtrlCbs.nfwStatusCb = [this](const GnssNfwNotification& notification) {
         nfwStatusCb(notification);
     };
 
@@ -84,7 +84,7 @@ static void convertGnssNfwNotification(GnssNfwNotification& in,
     out.isCachedLocation = in.isCachedLocation;
 }
 
-void GnssVisibilityControl::nfwStatusCb(GnssNfwNotification notification) {
+void GnssVisibilityControl::nfwStatusCb(const GnssNfwNotification& notification) {
     std::unique_lock<std::mutex> lock(mMutex);
     auto gnssVisibilityControlCbIface(mGnssVisibilityControlCbIface);
     lock.unlock();

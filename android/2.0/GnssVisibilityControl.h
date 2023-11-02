@@ -67,11 +67,11 @@ struct GnssVisibilityControl : public IGnssVisibilityControl {
      */
     Return<bool> setCallback(const ::android::sp<::android::hardware::gnss::visibility_control::V1_0::IGnssVisibilityControlCallback>& callback) override;
 
-    void statusCb(GnssNfwNotification notification);
+    void statusCb(const GnssNfwNotification& notification);
     bool isE911Session();
 
     /* Data call setup callback passed down to GNSS HAL implementation */
-    static void nfwStatusCb(GnssNfwNotification notification);
+    static void nfwStatusCb(const GnssNfwNotification& notification);
     static bool isInEmergencySession();
 
 private:

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -41,7 +41,7 @@ namespace gnss {
 namespace visibility_control {
 namespace aidl {
 namespace implementation {
-static void convertGnssNfwNotification(GnssNfwNotification& in,
+static void convertGnssNfwNotification(const GnssNfwNotification& in,
     IGnssVisibilityControlCallback::NfwNotification& out);
 
 void gnssVisibilityControlServiceDied(void* cookie) {
@@ -59,7 +59,7 @@ GnssVisibilityControl::GnssVisibilityControl(Gnss* gnss) : mGnss(gnss),
     memset(&locCtrlCbs, 0, sizeof(locCtrlCbs));
     locCtrlCbs.size = sizeof(LocationControlCallbacks);
 
-    locCtrlCbs.nfwStatusCb = [this](GnssNfwNotification notification) {
+    locCtrlCbs.nfwStatusCb = [this](const GnssNfwNotification& notification) {
         statusCb(notification);
     };
 
@@ -85,7 +85,7 @@ ScopedAStatus GnssVisibilityControl::enableNfwLocationAccess(
     mGnss->getLocationControlApi()->enableNfwLocationAccess(apps);
         return ScopedAStatus::ok();
 }
-static void convertGnssNfwNotification(GnssNfwNotification& in,
+static void convertGnssNfwNotification(const GnssNfwNotification& in,
     IGnssVisibilityControlCallback::NfwNotification& out) {
     memset(&out, 0, sizeof(IGnssVisibilityControlCallback::NfwNotification));
     out.proxyAppPackageName = in.proxyAppPackageName;
@@ -97,7 +97,7 @@ static void convertGnssNfwNotification(GnssNfwNotification& in,
     out.inEmergencyMode = in.inEmergencyMode;
     out.isCachedLocation = in.isCachedLocation;
 }
-void GnssVisibilityControl::statusCb(GnssNfwNotification notification) {
+void GnssVisibilityControl::statusCb(const GnssNfwNotification& notification) {
     std::unique_lock<std::mutex> lock(mMutex);
     auto gnssVisibilityControlCbIface(mGnssVisibilityControlCbIface);
     lock.unlock();

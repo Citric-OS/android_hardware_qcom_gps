@@ -64,7 +64,7 @@ public:
 
     // callbacks
     void onCapabilitiesCb(LocationCapabilitiesMask capabilitiesMask) final;
-    void onBatchingCb(size_t count, Location* location, BatchingOptions batchOptions) final;
+    void onBatchingCb(size_t count, Location* location, const BatchingOptions& batchOptions) final;
 
 private:
     ~BatchingAPIClient();

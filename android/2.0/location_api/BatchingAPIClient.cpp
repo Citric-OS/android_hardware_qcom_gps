@@ -97,7 +97,7 @@ void BatchingAPIClient::setCallbacks()
     locationCallbacks.trackingCb = nullptr;
     locationCallbacks.batchingCb = nullptr;
     locationCallbacks.batchingCb = [this](size_t count, Location* location,
-        BatchingOptions batchOptions) {
+        const BatchingOptions& batchOptions) {
         onBatchingCb(count, location, batchOptions);
     };
     locationCallbacks.geofenceBreachCb = nullptr;
@@ -201,7 +201,7 @@ void BatchingAPIClient::onCapabilitiesCb(LocationCapabilitiesMask capabilitiesMa
 }
 
 void BatchingAPIClient::onBatchingCb(size_t count, Location* location,
-        BatchingOptions /*batchOptions*/)
+        const BatchingOptions& /*batchOptions*/)
 {
     mMutex.lock();
     auto gnssBatchingCbIface(mGnssBatchingCbIface);

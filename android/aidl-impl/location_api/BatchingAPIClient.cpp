@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -84,7 +84,7 @@ void BatchingAPIClient::setCallbacks() {
     locationCallbacks.trackingCb = nullptr;
     locationCallbacks.batchingCb = nullptr;
     locationCallbacks.batchingCb = [this](size_t count, Location* location,
-        BatchingOptions batchOptions) {
+        const BatchingOptions& batchOptions) {
         onBatchingCb(count, location, batchOptions);
     };
     locationCallbacks.geofenceBreachCb = nullptr;
@@ -180,7 +180,7 @@ void BatchingAPIClient::onCapabilitiesCb(LocationCapabilitiesMask capabilitiesMa
 }
 
 void BatchingAPIClient::onBatchingCb(size_t count, Location* location,
-        BatchingOptions /*batchOptions*/) {
+        const BatchingOptions& /*batchOptions*/) {
     bool processReport = false;
     LOC_LOGd("(count: %zu)", count);
     mMutex.lock();

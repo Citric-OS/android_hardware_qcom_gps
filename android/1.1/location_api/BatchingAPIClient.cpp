@@ -68,7 +68,7 @@ BatchingAPIClient::BatchingAPIClient(const sp<IGnssBatchingCallback>& callback) 
     locationCallbacks.trackingCb = nullptr;
     locationCallbacks.batchingCb = nullptr;
     locationCallbacks.batchingCb = [this](size_t count, Location* location,
-            BatchingOptions batchOptions) {
+            const BatchingOptions& batchOptions) {
         onBatchingCb(count, location, batchOptions);
     };
     locationCallbacks.geofenceBreachCb = nullptr;
@@ -164,7 +164,7 @@ void BatchingAPIClient::onCapabilitiesCb(LocationCapabilitiesMask capabilitiesMa
 }
 
 void BatchingAPIClient::onBatchingCb(size_t count, Location* location,
-        BatchingOptions /*batchOptions*/)
+        const BatchingOptions& /*batchOptions*/)
 {
     LOC_LOGD("%s]: (count: %zu)", __FUNCTION__, count);
     mMutex.lock();

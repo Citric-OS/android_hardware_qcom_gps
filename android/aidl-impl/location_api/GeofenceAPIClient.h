@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -63,7 +63,7 @@ public:
 
     // callbacks
     void onGeofenceBreachCb(const GeofenceBreachNotification& geofenceBreachNotification) final;
-    void onGeofenceStatusCb(GeofenceStatusNotification geofenceStatusNotification) final;
+    void onGeofenceStatusCb(const GeofenceStatusNotification& geofenceStatusNotification) final;
     void onAddGeofencesCb(size_t count, LocationError* errors, uint32_t* ids) final;
     void onRemoveGeofencesCb(size_t count, LocationError* errors, uint32_t* ids) final;
     void onPauseGeofencesCb(size_t count, LocationError* errors, uint32_t* ids) final;
