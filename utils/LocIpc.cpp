@@ -145,8 +145,12 @@ ssize_t Sock::sendto(const void *buf, size_t len, int flags, const struct sockad
                 memcpy(tempBuf+sizeof(LOC_IPC_HEAD), (char*)buf + offset, thisLen);
                 rtv = ::sendto(mSid, tempBuf, thisLen + sizeof(LOC_IPC_HEAD), flags, destAddr,
                                addrlen);
+                if (rtv == -1 || rtv <= sizeof(LOC_IPC_HEAD)) {
+                    LOC_LOGw("sendto failed, return %zu, reason: %s", rtv, strerror(errno));
+                    break;
+                }
             }
-            rtv = (rtv > 0) ? (len) : -1;
+            rtv = (rtv > sizeof(LOC_IPC_HEAD)) ? (len) : -1;
             delete[] tempBuf;
         }
     }
