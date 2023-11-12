@@ -120,7 +120,7 @@ public:
     void onTrackingCb(const Location& location) final;
     void onGnssNiCb(uint32_t id, const GnssNiNotification& gnssNiNotification) final;
     void onGnssSvCb(const GnssSvNotification& gnssSvNotification) final;
-    void onGnssNmeaCb(GnssNmeaNotification gnssNmeaNotification) final;
+    void onGnssNmeaCb(const GnssNmeaNotification& gnssNmeaNotification) final;
 
     void onStartTrackingCb(LocationError error) final;
     void onStopTrackingCb(LocationError error) final;

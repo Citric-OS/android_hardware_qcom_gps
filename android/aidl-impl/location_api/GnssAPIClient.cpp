@@ -179,7 +179,7 @@ void GnssAPIClient::setCallbacks() {
 
     locationCallbacks.gnssNmeaCb = nullptr;
     if (mNmeaEnabled) {
-        locationCallbacks.gnssNmeaCb = [this](GnssNmeaNotification gnssNmeaNotification) {
+        locationCallbacks.gnssNmeaCb = [this](const GnssNmeaNotification& gnssNmeaNotification) {
             onGnssNmeaCb(gnssNmeaNotification);
         };
     }
@@ -522,7 +522,7 @@ void GnssAPIClient::onGnssSvCb(const GnssSvNotification& gnssSvNotification) {
     }
 }
 
-void GnssAPIClient::onGnssNmeaCb(GnssNmeaNotification gnssNmeaNotification) {
+void GnssAPIClient::onGnssNmeaCb(const GnssNmeaNotification& gnssNmeaNotification) {
     mMutex.lock();
     auto gnssCbIface(mGnssCbIface);
     mMutex.unlock();

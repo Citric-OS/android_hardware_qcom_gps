@@ -166,7 +166,7 @@ public:
     uint32_t locAPIGnssDeleteAidingData(GnssAidingData& data);
     uint32_t locAPIEnable(LocationTechnologyType techType);
     void locAPIDisable();
-    uint32_t locAPIGnssUpdateConfig(GnssConfig config);
+    uint32_t locAPIGnssUpdateConfig(const GnssConfig& config);
     uint32_t locAPIGnssGetConfig(GnssConfigFlagsMask config);
     inline ILocationControlAPI* getControlAPI() { return mLocationControlAPI; }
 
@@ -277,10 +277,10 @@ public:
     void onResponseCb(LocationError error, uint32_t id);
     void onCollectiveResponseCb(size_t count, LocationError* errors, uint32_t* ids);
 
-    void beforeGeofenceBreachCb(GeofenceBreachNotification geofenceBreachNotification);
+    void beforeGeofenceBreachCb(const GeofenceBreachNotification& geofenceBreachNotification);
 
     inline virtual void onCapabilitiesCb(LocationCapabilitiesMask /*capabilitiesMask*/) {}
-    inline virtual void onGnssNmeaCb(GnssNmeaNotification /*gnssNmeaNotification*/) {}
+    inline virtual void onGnssNmeaCb(const GnssNmeaNotification& /*gnssNmeaNotification*/) {}
     inline virtual void onGnssDataCb(const GnssDataNotification &/*gnssDataNotification*/) {}
     inline virtual void onGnssMeasurementsCb(
             const GnssMeasurementsNotification &/*gnssMeasurementsNotification*/) {}
@@ -296,11 +296,11 @@ public:
             const GnssLocationInfoNotification &/*gnssLocationInfoNotification*/) {}
 
     inline virtual void onBatchingCb(size_t /*count*/, Location* /*location*/,
-            BatchingOptions /*batchingOptions*/) {}
-    inline virtual void onBatchingStatusCb(BatchingStatusInfo /*batchingStatus*/,
+            const BatchingOptions& /*batchingOptions*/) {}
+    inline virtual void onBatchingStatusCb(const BatchingStatusInfo& /*batchingStatus*/,
             std::list<uint32_t> &/*listOfCompletedTrips*/) {}
-    void beforeBatchingStatusCb(BatchingStatusInfo batchStatus,
-            std::list<uint32_t> & tripCompletedList);
+    void beforeBatchingStatusCb(const BatchingStatusInfo& batchStatus,
+            const std::list<uint32_t> & tripCompletedList);
     inline virtual void onStartBatchingCb(LocationError /*error*/) {}
     inline virtual void onStopBatchingCb(LocationError /*error*/) {}
     inline virtual void onUpdateBatchingOptionsCb(LocationError /*error*/) {}
@@ -309,7 +309,7 @@ public:
     inline virtual void onGeofenceBreachCb(
             const GeofenceBreachNotification& /*geofenceBreachNotification*/) {}
     inline virtual void onGeofenceStatusCb(
-            GeofenceStatusNotification /*geofenceStatusNotification*/) {}
+            const GeofenceStatusNotification& /*geofenceStatusNotification*/) {}
     inline virtual void onAddGeofencesCb(
             size_t /*count*/, LocationError* /*errors*/, uint32_t* /*ids*/) {}
     inline virtual void onRemoveGeofencesCb(
@@ -325,7 +325,7 @@ public:
             const GnssNiNotification &/*gnssNiNotification*/) {}
     inline virtual void onGnssNiResponseCb(LocationError /*error*/) {}
 
-    inline virtual void onLocationSystemInfoCb(LocationSystemInfo /*locationSystemInfo*/) {}
+    inline virtual void onLocationSystemInfoCb(const LocationSystemInfo& /*locationSystemInfo*/) {}
 
 protected:
     virtual ~LocationAPIClientBase();

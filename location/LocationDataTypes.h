@@ -2760,11 +2760,11 @@ typedef std::function<void(
 typedef std::function<void(
     uint32_t count,      // number of locations in array
     Location* location, // array of locations
-    BatchingOptions batchingOptions // Batching options
+    const BatchingOptions& batchingOptions // Batching options
 )> batchingCallback;
 
 typedef std::function<void(
-    BatchingStatusInfo batchingStatus, // batch status
+    const BatchingStatusInfo& batchingStatus, // batch status
     std::list<uint32_t> & listOfCompletedTrips
 )> batchingStatusCallback;
 
@@ -2798,7 +2798,7 @@ typedef std::function<void(
 /* Used for addGeofences API, optional can be NULL
        geofenceStatusCallback is called when any number of geofences have a status change */
 typedef std::function<void(
-    GeofenceStatusNotification geofenceStatusNotification
+    const GeofenceStatusNotification& geofenceStatusNotification
 )> geofenceStatusCallback;
 
 /* Network Initiated request, optional can be NULL
@@ -2819,7 +2819,7 @@ typedef std::function<void(
     gnssNmeaCallback is called only during a tracking session
     broadcasted to all clients, no matter if a session has started by client */
 typedef std::function<void(
-    GnssNmeaNotification gnssNmeaNotification
+   const GnssNmeaNotification& gnssNmeaNotification
 )> gnssNmeaCallback;
 
 /* Gives GNSS data, optional can be NULL
@@ -2846,7 +2846,7 @@ typedef std::function<void(
    system information update. optional, can be NULL.
 */
 typedef std::function<void(
-    LocationSystemInfo locationSystemInfo
+    const LocationSystemInfo& locationSystemInfo
 )> locationSystemInfoCallback;
 
 /* LocationSystemInfoCb is for receiving rare occuring location
@@ -2903,7 +2903,7 @@ struct AntennaInfoCallback {
 * Callback with NFW information.
 */
 typedef std::function<void(
-    GnssNfwNotification notification
+    const GnssNfwNotification& notification
 )> nfwStatusCallback;
 
 typedef std::function<bool(
