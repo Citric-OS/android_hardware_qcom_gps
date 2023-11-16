@@ -1945,7 +1945,7 @@ bool SystemStatus::setDefaultGnssEngineStates(void)
 ******************************************************************************/
 bool SystemStatus::eventConnectionStatus(bool connected, int8_t type,
                                          bool roaming, NetworkHandle networkHandle,
-                                         string& apn)
+                                         const string& apn)
 {
     // send networkinof dataitem to systemstatus observer clients
     SystemStatusNetworkInfo s(type, "", "", connected, roaming,

@@ -1009,7 +1009,7 @@ void LocApiBase::setTribandState(bool /*enabled*/)
 DEFAULT_IMPL()
 
 void LocApiBase::
-    configPrecisePositioning(uint32_t featureId, bool enable, std::string appHash,
+    configPrecisePositioning(uint32_t featureId, bool enable, const std::string& appHash,
             LocApiResponse* /*adpterResponse*/)
 DEFAULT_IMPL()
 

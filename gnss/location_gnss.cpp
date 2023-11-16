@@ -77,12 +77,12 @@ static void addClient(LocationAPI* client, const LocationCallbacks& callbacks);
 static void removeClient(LocationAPI* client, removeClientCompleteCallback rmClientCb);
 static void requestCapabilities(LocationAPI* client);
 
-static uint32_t startTracking(LocationAPI* client, TrackingOptions&);
-static void updateTrackingOptions(LocationAPI* client, uint32_t id, TrackingOptions&);
+static uint32_t startTracking(LocationAPI* client, const TrackingOptions&);
+static void updateTrackingOptions(LocationAPI* client, uint32_t id, const TrackingOptions&);
 static void stopTracking(LocationAPI* client, uint32_t id);
 
 static void gnssNiResponse(LocationAPI* client, uint32_t id, GnssNiResponse response);
-static uint32_t gnssDeleteAidingData(GnssAidingData& data);
+static uint32_t gnssDeleteAidingData(const GnssAidingData& data);
 static void gnssUpdateXtraThrottle(const bool enabled);
 
 static void setControlCallbacks(LocationControlCallbacks& controlCallbacks);
@@ -91,7 +91,7 @@ static void disable(uint32_t id);
 static uint32_t* gnssUpdateConfig(const GnssConfig& config);
 static uint32_t* gnssGetConfig(GnssConfigFlagsMask mask);
 
-static void gnssUpdateSvTypeConfig(GnssSvTypeConfig& config);
+static void gnssUpdateSvTypeConfig(const GnssSvTypeConfig& config);
 static void gnssGetSvTypeConfig(GnssSvTypeConfigCallback& callback);
 static void gnssResetSvTypeConfig();
 
@@ -105,9 +105,9 @@ static void agpsDataConnClosed(AGpsExtType agpsType);
 static void agpsDataConnFailed(AGpsExtType agpsType);
 static void getDebugReport(GnssDebugReport& report);
 static void updateConnectionStatus(bool connected, int8_t type, bool roaming,
-                                   NetworkHandle networkHandle, string& apn);
+                                   NetworkHandle networkHandle, const string& apn);
 static void getGnssEnergyConsumed(GnssEnergyConsumedCallback energyConsumedCb);
-static void enableNfwLocationAccess(std::vector<std::string>& enabledNfws);
+static void enableNfwLocationAccess(const std::vector<std::string>& enabledNfws);
 static void nfwInit(const NfwCbInfo& cbInfo);
 static void getPowerStateChanges(std::function<void(bool)> powerStateCb);
 
@@ -139,7 +139,7 @@ static void enablePPENtripStream(const GnssNtripConnectionParams& params, bool e
 static void disablePPENtripStream();
 
 static bool measCorrInit(const measCorrSetCapabilitiesCallback setCapabilitiesCb);
-static bool measCorrSetCorrections(const GnssMeasurementCorrections gnssMeasCorr);
+static bool measCorrSetCorrections(const GnssMeasurementCorrections& gnssMeasCorr);
 static void measCorrClose();
 static uint32_t getAntennaInfo(AntennaInfoCallback* antennaInfoCallback);
 static uint32_t configEngineRunState(PositioningEngineMask engType, LocEngineRunState engState);
@@ -157,7 +157,7 @@ static uint32_t configMerkleTree(const char * merkleTreeConfigBuffer, int buffer
 static uint32_t configOsnmaEnablement(bool enable);
 static uint32_t getXtraStatus();
 static uint32_t registerXtraStatusUpdate(bool registerUpdate);
-static void configPrecisePositioning(uint32_t featureId, bool enable, std::string appHash);
+static void configPrecisePositioning(uint32_t featureId, bool enable, const std::string& appHash);
 
 static const GnssInterface gGnssInterface = {
     sizeof(GnssInterface),
@@ -292,7 +292,7 @@ static void requestCapabilities(LocationAPI* client)
 }
 
 static uint32_t startTracking(
-        LocationAPI* client, TrackingOptions& trackingOptions)
+        LocationAPI* client, const TrackingOptions& trackingOptions)
 {
     if (NULL != gGnssAdapter) {
         return gGnssAdapter->startTrackingCommand(client, trackingOptions);
@@ -302,7 +302,7 @@ static uint32_t startTracking(
 }
 
 static void updateTrackingOptions(
-        LocationAPI* client, uint32_t id, TrackingOptions& trackingOptions)
+        LocationAPI* client, uint32_t id, const TrackingOptions& trackingOptions)
 {
     if (NULL != gGnssAdapter) {
         gGnssAdapter->updateTrackingOptionsCommand(
@@ -365,7 +365,7 @@ static uint32_t* gnssGetConfig(GnssConfigFlagsMask mask)
     }
 }
 
-static void gnssUpdateSvTypeConfig(GnssSvTypeConfig& config)
+static void gnssUpdateSvTypeConfig(const GnssSvTypeConfig& config)
 {
     if (NULL != gGnssAdapter) {
         gGnssAdapter->gnssUpdateSvTypeConfigCommand(config, SV_TYPE_CONFIG_FROM_API);
@@ -386,7 +386,7 @@ static void gnssResetSvTypeConfig()
     }
 }
 
-static uint32_t gnssDeleteAidingData(GnssAidingData& data)
+static uint32_t gnssDeleteAidingData(const GnssAidingData& data)
 {
     if (NULL != gGnssAdapter) {
         return gGnssAdapter->gnssDeleteAidingDataCommand(data);
@@ -452,7 +452,7 @@ static void getDebugReport(GnssDebugReport& report) {
 
 static void updateConnectionStatus(bool connected, int8_t type,
                                    bool roaming, NetworkHandle networkHandle,
-                                   string& apn) {
+                                   const string& apn) {
     if (NULL != gGnssAdapter) {
         gGnssAdapter->getSystemStatus()->eventConnectionStatus(
                 connected, type, roaming, networkHandle, apn);
@@ -501,7 +501,7 @@ static void getGnssEnergyConsumed(GnssEnergyConsumedCallback energyConsumedCb) {
     }
 }
 
-static void enableNfwLocationAccess(std::vector<std::string>& enabledNfws) {
+static void enableNfwLocationAccess(const std::vector<std::string>& enabledNfws) {
     if (NULL != gGnssAdapter) {
         gGnssAdapter->nfwControlCommand(enabledNfws);
     }
@@ -588,7 +588,7 @@ static bool measCorrInit(const measCorrSetCapabilitiesCallback setCapabilitiesCb
     }
 }
 
-static bool measCorrSetCorrections(const GnssMeasurementCorrections gnssMeasCorr) {
+static bool measCorrSetCorrections(const GnssMeasurementCorrections& gnssMeasCorr) {
     if (NULL != gGnssAdapter) {
         return gGnssAdapter->measCorrSetCorrectionsCommand(gnssMeasCorr);
     } else {
@@ -772,7 +772,7 @@ static uint32_t registerXtraStatusUpdate(bool registerUpdate) {
     }
 }
 
-static void configPrecisePositioning(uint32_t featureId, bool enable, std::string appHash) {
+static void configPrecisePositioning(uint32_t featureId, bool enable, const std::string& appHash) {
     if (NULL != gGnssAdapter) {
         gGnssAdapter->configPrecisePositioningCommand(featureId, enable, appHash);
     }
