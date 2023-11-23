@@ -3035,6 +3035,10 @@ GnssAdapter::updateClientsEventMask()
                 it->second.gnssSignalTypesCb(mGnssCapabNotification);
             }
         }
+        if (it->second.svEphemerisCb != nullptr) {
+            LOC_LOGd("GNSS EPH supported");
+            mask |= LOC_API_ADAPTER_BIT_GNSS_SV_EPHEMERIS_REPORT;
+        }
     }
 
     /*
@@ -3296,7 +3300,8 @@ GnssAdapter::hasCallbacksToStartTracking(LocationAPI* client)
                 it->second.engineLocationsInfoCb || it->second.gnssMeasurementsCb ||
                 it->second.gnssNHzMeasurementsCb || it->second.gnssDataCb ||
                 it->second.gnssSvCb || it->second.gnssNmeaCb || it->second.gnssDcReportCb ||
-                it->second.gnssSignalTypesCb || it->second.engineNmeaCb) {
+                it->second.gnssSignalTypesCb || it->second.engineNmeaCb ||
+                it->second.svEphemerisCb) {
             allowed = true;
         } else {
             LOC_LOGi("missing right callback to start tracking")
@@ -5636,9 +5641,232 @@ GnssAdapter::reportSvPolynomialEvent(GnssSvPolynomial &svPolynomial)
     mEngHubProxy->gnssReportSvPolynomial(svPolynomial);
 }
 
+bool GnssAdapter::isEphNetworkBased(const GnssEphCommon& commanEphRpt)
+{
+    if (GNSS_EPH_ACTION_UPDATE_SRC_NETWORK_V02 == commanEphRpt.updateAction ||
+            GNSS_EPH_ACTION_DELETE_SRC_NETWORK_V02 == commanEphRpt.updateAction) {
+        return true;
+    }
+    return false;
+}
+
+void GnssAdapter::convertGpsEphemeris(const GpsEphemerisResponse& ephRpt,
+            GpsEphemerisResponse& halEph) {
+    /** Keep count of number of OTA based ephemeris to be reported to LCA */
+    uint16_t numEph = 0;
+    uint16_t maxNumEph = std::min(ephRpt.numOfEphemeris,
+            (uint16_t)GNSS_EPHEMERIS_LIST_MAX_SIZE_V02);
+
+    for (uint16_t idx = 0; idx < maxNumEph; idx++) {
+        if (isEphNetworkBased(ephRpt.gpsEphemerisData[idx].commonEphemerisData)) {
+            continue;
+        }
+        halEph.gpsEphemerisData[numEph] = ephRpt.gpsEphemerisData[idx];
+        numEph++;
+    }
+
+    halEph.numOfEphemeris = numEph;
+}
+
+void GnssAdapter::convertGalEphemeris(const GalileoEphemerisResponse& ephRpt,
+            GalileoEphemerisResponse& halEph) {
+
+    /** Keep count of number of OTA based ephemeris to be reported to LCA */
+    uint16_t numEph = 0;
+    uint16_t maxNumEph = std::min(ephRpt.numOfEphemeris,
+            (uint16_t)GNSS_EPHEMERIS_LIST_MAX_SIZE_V02);
+
+    for (uint16_t idx = 0; idx < maxNumEph; idx++) {
+        if (isEphNetworkBased(ephRpt.galEphemerisData[idx].commonEphemerisData)) {
+            continue;
+        }
+        halEph.galEphemerisData[numEph] = ephRpt.galEphemerisData[idx];
+        numEph++;
+    }
+
+    halEph.numOfEphemeris = numEph;
+
+}
+
+void GnssAdapter::convertGloEphemeris(const GlonassEphemerisResponse& ephRpt,
+            GlonassEphemerisResponse& halEph) {
+
+    /** Keep count of number of OTA based ephemeris to be reported to LCA */
+    uint16_t numEph = 0;
+    uint16_t maxNumEph = std::min(ephRpt.numOfEphemeris,
+            (uint16_t)GNSS_EPHEMERIS_LIST_MAX_SIZE_V02);
+
+    for (uint16_t idx = 0; idx < maxNumEph; idx++) {
+        if (GNSS_EPH_ACTION_UPDATE_SRC_NETWORK_V02 == ephRpt.gloEphemerisData[idx].updateAction ||
+                GNSS_EPH_ACTION_DELETE_SRC_NETWORK_V02 ==
+                ephRpt.gloEphemerisData[idx].updateAction) {
+            continue;
+        }
+        halEph.gloEphemerisData[numEph] = ephRpt.gloEphemerisData[idx];
+        numEph++;
+    }
+
+    halEph.numOfEphemeris = numEph;
+
+}
+
+void GnssAdapter::convertBdsEphemeris(const BdsEphemerisResponse& ephRpt,
+            BdsEphemerisResponse& halEph) {
+
+    /** Keep count of number of OTA based ephemeris to be reported to LCA */
+    uint16_t numEph = 0;
+    uint16_t maxNumEph = std::min(ephRpt.numOfEphemeris,
+            (uint16_t)GNSS_EPHEMERIS_LIST_MAX_SIZE_V02);
+
+    for (uint16_t idx = 0; idx < maxNumEph; idx++) {
+        if (isEphNetworkBased(ephRpt.bdsEphemerisData[idx].commonEphemerisData)) {
+            continue;
+        }
+        halEph.bdsEphemerisData[numEph] = ephRpt.bdsEphemerisData[idx];
+        numEph++;
+    }
+
+    halEph.numOfEphemeris = numEph;
+}
+
+void GnssAdapter::convertQzssEphemeris(const QzssEphemerisResponse& ephRpt,
+            QzssEphemerisResponse& halEph) {
+
+    /** Keep count of number of OTA based ephemeris to be reported to LCA */
+    uint16_t numEph = 0;
+    uint16_t maxNumEph = std::min(ephRpt.numOfEphemeris,
+            (uint16_t)GNSS_EPHEMERIS_LIST_MAX_SIZE_V02);
+
+    for (uint16_t idx = 0; idx < maxNumEph; idx++) {
+        if (isEphNetworkBased(ephRpt.qzssEphemerisData[idx].commonEphemerisData)) {
+            continue;
+        }
+
+        halEph.qzssEphemerisData[numEph] = ephRpt.qzssEphemerisData[idx];
+        numEph++;
+    }
+
+    halEph.numOfEphemeris = numEph;
+}
+void GnssAdapter::convertNavicEphemeris(const NavicEphemerisResponse& ephRpt,
+            NavicEphemerisResponse& halEph) {
+
+    /** Keep count of number of OTA based ephemeris to be reported to LCA */
+    uint16_t numEph = 0;
+    uint16_t maxNumEph = std::min(ephRpt.numOfEphemeris,
+            (uint16_t)GNSS_EPHEMERIS_LIST_MAX_SIZE_V02);
+
+    for (uint16_t idx = 0; idx < maxNumEph; idx++) {
+        if (isEphNetworkBased(ephRpt.navicEphemerisData[idx].commonEphemerisData)) {
+            continue;
+        }
+        halEph.navicEphemerisData[numEph] = ephRpt.navicEphemerisData[idx];
+        numEph++;
+    }
+
+    halEph.numOfEphemeris = numEph;
+}
+
+void
+GnssAdapter::convertEphReportInfo(const GnssSvEphemerisReport& svEphemeris,
+            GnssSvEphemerisReport& ephReport, bool& needToReportEph) {
+
+    switch (svEphemeris.gnssConstellation) {
+        case GNSS_LOC_SV_SYSTEM_GPS:
+            ephReport.gnssConstellation = GNSS_LOC_SV_SYSTEM_GPS;
+                convertGpsEphemeris(svEphemeris.ephInfo.gpsEphemeris,
+                    ephReport.ephInfo.gpsEphemeris);
+            if (!ephReport.ephInfo.gpsEphemeris.numOfEphemeris) {
+                needToReportEph = false;
+            }
+            break;
+        case GNSS_LOC_SV_SYSTEM_GALILEO:
+            ephReport.gnssConstellation = GNSS_LOC_SV_SYSTEM_GALILEO;
+            convertGalEphemeris(svEphemeris.ephInfo.galileoEphemeris,
+                    ephReport.ephInfo.galileoEphemeris);
+            if (!ephReport.ephInfo.galileoEphemeris.numOfEphemeris) {
+                needToReportEph = false;
+            }
+            break;
+        case GNSS_LOC_SV_SYSTEM_GLONASS:
+            ephReport.gnssConstellation = GNSS_LOC_SV_SYSTEM_GLONASS;
+            convertGloEphemeris(svEphemeris.ephInfo.glonassEphemeris,
+                    ephReport.ephInfo.glonassEphemeris);
+            if (!ephReport.ephInfo.glonassEphemeris.numOfEphemeris) {
+                needToReportEph = false;
+            }
+            break;
+        case GNSS_LOC_SV_SYSTEM_BDS:
+            ephReport.gnssConstellation = GNSS_LOC_SV_SYSTEM_BDS;
+            convertBdsEphemeris(svEphemeris.ephInfo.bdsEphemeris,
+                    ephReport.ephInfo.bdsEphemeris);
+            if (!ephReport.ephInfo.bdsEphemeris.numOfEphemeris) {
+                needToReportEph = false;
+            }
+            break;
+        case GNSS_LOC_SV_SYSTEM_QZSS:
+            ephReport.gnssConstellation = GNSS_LOC_SV_SYSTEM_QZSS;
+            convertQzssEphemeris(svEphemeris.ephInfo.qzssEphemeris,
+                    ephReport.ephInfo.qzssEphemeris);
+            if (!ephReport.ephInfo.qzssEphemeris.numOfEphemeris) {
+                needToReportEph = false;
+            }
+            break;
+        case GNSS_LOC_SV_SYSTEM_NAVIC:
+            ephReport.gnssConstellation = GNSS_LOC_SV_SYSTEM_NAVIC;
+            convertNavicEphemeris(svEphemeris.ephInfo.navicEphemeris,
+                    ephReport.ephInfo.navicEphemeris);
+            if (!ephReport.ephInfo.navicEphemeris.numOfEphemeris) {
+                needToReportEph = false;
+            }
+            break;
+        default:
+                LOC_LOGe(" Unknown System for Ephemeris Data ");
+                needToReportEph = false;
+            break;
+    }
+
+    if (needToReportEph && svEphemeris.isSystemTimeValid) {
+        ephReport.isSystemTimeValid = 1;
+        ephReport.systemTime = svEphemeris.systemTime;
+    }
+}
+
+void
+GnssAdapter::reportSvEphemerisData (const GnssSvEphemerisReport& svEphemeris) {
+    GnssSvEphemerisReport svEphRpt = {};
+    bool needToReportEph = true;
+    convertEphReportInfo(svEphemeris, svEphRpt, needToReportEph);
+    /** If all the Eph Data is network based, we do not report it to LCA */
+    if (needToReportEph) {
+        for (auto it=mClientData.begin(); it != mClientData.end(); ++it) {
+            if (nullptr != it->second.svEphemerisCb) {
+                it->second.svEphemerisCb(svEphRpt);
+            }
+        }
+    }
+}
+
 void
 GnssAdapter::reportSvEphemerisEvent(GnssSvEphemerisReport & svEphemeris)
 {
+
+    struct MsgReportSvEphemerisData : public LocMsg {
+        GnssAdapter& mAdapter;
+        GnssSvEphemerisReport mSvEphemerisData;
+        inline MsgReportSvEphemerisData(GnssAdapter& adapter,
+                                            const GnssSvEphemerisReport& svEphemerisData) :
+                LocMsg(),
+                mAdapter(adapter),
+                mSvEphemerisData(svEphemerisData) {
+        }
+
+        inline virtual void proc() const {
+            mAdapter.reportSvEphemerisData(mSvEphemerisData);
+        }
+    };
+
+    sendMsg(new MsgReportSvEphemerisData(*this, svEphemeris));
     mEngHubProxy->gnssReportSvEphemeris(svEphemeris);
 }
 
