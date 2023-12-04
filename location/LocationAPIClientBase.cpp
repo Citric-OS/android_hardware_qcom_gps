@@ -118,7 +118,7 @@ LocationAPIControlClient::~LocationAPIControlClient()
     pthread_mutex_destroy(&mMutex);
 }
 
-uint32_t LocationAPIControlClient::locAPIGnssDeleteAidingData(GnssAidingData& data)
+uint32_t LocationAPIControlClient::locAPIGnssDeleteAidingData(const GnssAidingData& data)
 {
     uint32_t retVal = LOCATION_ERROR_GENERAL_FAILURE;
     pthread_mutex_lock(&mMutex);
@@ -407,7 +407,7 @@ void LocationAPIClientBase::onLocationApiDestroyCompleteCb()
     delete this;
 }
 
-uint32_t LocationAPIClientBase::locAPIStartTracking(TrackingOptions& options)
+uint32_t LocationAPIClientBase::locAPIStartTracking(const TrackingOptions& options)
 {
     uint32_t retVal = LOCATION_ERROR_GENERAL_FAILURE;
     pthread_mutex_lock(&mMutex);
@@ -452,7 +452,7 @@ void LocationAPIClientBase::locAPIStopTracking()
     pthread_mutex_unlock(&mMutex);
 }
 
-void LocationAPIClientBase::locAPIUpdateTrackingOptions(TrackingOptions& options)
+void LocationAPIClientBase::locAPIUpdateTrackingOptions(const TrackingOptions& options)
 {
     pthread_mutex_lock(&mMutex);
     if (mLocationAPI) {

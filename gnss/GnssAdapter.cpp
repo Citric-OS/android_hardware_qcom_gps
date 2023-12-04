@@ -2264,7 +2264,7 @@ void GnssAdapter::reportGnssSvIdConfig(const GnssSvIdConfig& svIdConfig)
 }
 
 void
-GnssAdapter::gnssUpdateSvTypeConfigCommand(GnssSvTypeConfig config,
+GnssAdapter::gnssUpdateSvTypeConfigCommand(const GnssSvTypeConfig& config,
         GnssSvTypeConfigSource source)
 {
     struct MsgGnssUpdateSvTypeConfig : public LocMsg {
@@ -2275,7 +2275,7 @@ GnssAdapter::gnssUpdateSvTypeConfigCommand(GnssSvTypeConfig config,
         inline MsgGnssUpdateSvTypeConfig(
                 GnssAdapter* adapter,
                 LocApiBase* api,
-                GnssSvTypeConfig& config,
+                const GnssSvTypeConfig& config,
                 GnssSvTypeConfigSource source) :
             LocMsg(),
             mAdapter(adapter),
@@ -2561,7 +2561,7 @@ void GnssAdapter::deleteAidingData(const GnssAidingData &data, uint32_t sessionI
 }
 
 uint32_t
-GnssAdapter::gnssDeleteAidingDataCommand(GnssAidingData& data)
+GnssAdapter::gnssDeleteAidingDataCommand(const GnssAidingData& data)
 {
     uint32_t sessionId = generateSessionId();
     LOC_LOGd("id %u", sessionId);
@@ -2572,7 +2572,7 @@ GnssAdapter::gnssDeleteAidingDataCommand(GnssAidingData& data)
         GnssAidingData mData;
         inline MsgDeleteAidingData(GnssAdapter& adapter,
                                    uint32_t sessionId,
-                                   GnssAidingData& data) :
+                                   const GnssAidingData& data) :
             LocMsg(),
             mAdapter(adapter),
             mSessionId(sessionId),
@@ -3449,7 +3449,7 @@ GnssAdapter::reportResponse(size_t count, LocationError* errs, uint32_t* ids)
 }
 
 uint32_t
-GnssAdapter::startTrackingCommand(LocationAPI* client, TrackingOptions& options)
+GnssAdapter::startTrackingCommand(LocationAPI* client, const TrackingOptions& options)
 {
     uint32_t sessionId = generateSessionId();
     LOC_LOGi("client %p id %u minInterval %u minDistance %u mode %u powermode %u tbm %u",
@@ -3466,7 +3466,7 @@ GnssAdapter::startTrackingCommand(LocationAPI* client, TrackingOptions& options)
                                LocApiBase& api,
                                LocationAPI* client,
                                uint32_t sessionId,
-                               TrackingOptions options) :
+                               const TrackingOptions& options) :
             LocMsg(),
             mAdapter(adapter),
             mApi(api),
@@ -3675,7 +3675,7 @@ GnssAdapter::updateTracking(LocationAPI* client, uint32_t sessionId,
 
 void
 GnssAdapter::updateTrackingOptionsCommand(LocationAPI* client, uint32_t id,
-                                          TrackingOptions& options)
+                                          const TrackingOptions& options)
 {
     LOC_LOGd("client %p id %u minInterval %u mode %u",
              client, id, options.minInterval, options.mode);
@@ -3690,7 +3690,7 @@ GnssAdapter::updateTrackingOptionsCommand(LocationAPI* client, uint32_t id,
                                 LocApiBase& api,
                                 LocationAPI* client,
                                 uint32_t sessionId,
-                                TrackingOptions options) :
+                                const TrackingOptions& options) :
             LocMsg(),
             mAdapter(adapter),
             mApi(api),
@@ -6955,7 +6955,7 @@ uint32_t GnssAdapter::getNfwControlBits(const std::vector<std::string>& enabledN
 }
 
 void
-GnssAdapter::nfwControlCommand(std::vector<std::string>& enabledNfws) {
+GnssAdapter::nfwControlCommand(const std::vector<std::string>& enabledNfws) {
     struct MsgControlNfwLocationAccess : public LocMsg {
         GnssAdapter& mAdapter;
         LocApiBase& mApi;
@@ -7379,7 +7379,7 @@ bool GnssAdapter::openMeasCorrCommand(const measCorrSetCapabilitiesCallback setC
         }
 }
 
-bool GnssAdapter::measCorrSetCorrectionsCommand(const GnssMeasurementCorrections gnssMeasCorr) {
+bool GnssAdapter::measCorrSetCorrectionsCommand(const GnssMeasurementCorrections& gnssMeasCorr) {
     LOC_LOGi("GnssAdapter::measCorrSetCorrectionsCommand");
 
     /* Message to set Measurement Corrections */
@@ -7389,7 +7389,7 @@ bool GnssAdapter::measCorrSetCorrectionsCommand(const GnssMeasurementCorrections
         LocApiBase& mApi;
 
         inline MsgSetCorrectionsMeasCorr(
-            const GnssMeasurementCorrections gnssMeasCorr,
+            const GnssMeasurementCorrections& gnssMeasCorr,
             GnssAdapter& adapter,
             LocApiBase& api) :
             LocMsg(),
@@ -7880,7 +7880,7 @@ uint32_t GnssAdapter::registerXtraStatusUpdateCommand(bool registerUpdate) {
 }
 
 void GnssAdapter::configPrecisePositioningCommand(
-        uint32_t featureId, bool enable, std::string appHash) {
+        uint32_t featureId, bool enable, const std::string& appHash) {
 
     struct MsgConfigPrecisePositioning : public LocMsg {
         GnssAdapter& mAdapter;
@@ -7890,7 +7890,7 @@ void GnssAdapter::configPrecisePositioningCommand(
 
         inline MsgConfigPrecisePositioning(GnssAdapter& adapter,
                                            bool enable,
-                                           std::string appHash,
+                                           const std::string& appHash,
                                            uint32_t featureId) :
             LocMsg(),
             mAdapter(adapter),

@@ -108,7 +108,7 @@ public:
                 LOCATION_ERROR_ALREADY_STARTED if a startTracking session is already in progress
                 LOCATION_ERROR_CALLBACK_MISSING if no trackingCallback was passed in createInstance
                 LOCATION_ERROR_INVALID_PARAMETER if TrackingOptions parameter is invalid */
-    virtual uint32_t startTracking(TrackingOptions&) override;
+    virtual uint32_t startTracking(const TrackingOptions&) override;
 
     /* stopTracking stops a tracking session associated with id parameter.
         responseCallback returns:
@@ -121,7 +121,7 @@ public:
                 LOCATION_ERROR_SUCCESS if successful
                 LOCATION_ERROR_INVALID_PARAMETER if TrackingOptions parameters are invalid
                 LOCATION_ERROR_ID_UNKNOWN if id is not associated with a tracking session */
-    virtual void updateTrackingOptions(uint32_t id, TrackingOptions&) override;
+    virtual void updateTrackingOptions(uint32_t id, const TrackingOptions&) override;
 
     /* ================================== BATCHING ================================== */
 
@@ -140,7 +140,7 @@ public:
                 LOCATION_ERROR_CALLBACK_MISSING if no batchingCallback was passed in createInstance
                 LOCATION_ERROR_INVALID_PARAMETER if a parameter is invalid
                 LOCATION_ERROR_NOT_SUPPORTED if batching is not supported */
-    virtual uint32_t startBatching(BatchingOptions&) override;
+    virtual uint32_t startBatching(const BatchingOptions&) override;
 
     /* stopBatching stops a batching session associated with id parameter.
         responseCallback returns:
@@ -153,7 +153,7 @@ public:
                 LOCATION_ERROR_SUCCESS if successful
                 LOCATION_ERROR_INVALID_PARAMETER if BatchingOptions parameters are invalid
                 LOCATION_ERROR_ID_UNKNOWN if id is not associated with a batching session */
-    virtual void updateBatchingOptions(uint32_t id, BatchingOptions&) override;
+    virtual void updateBatchingOptions(uint32_t id, const BatchingOptions&) override;
 
     /* getBatchedLocations gets a number of locations that are currently stored/batched
        on the low power processor, delivered by the batchingCallback passed in createInstance.
@@ -324,7 +324,7 @@ public:
                 LOCATION_ERROR_SUCCESS if successful
                 LOCATION_ERROR_INVALID_PARAMETER if any parameters are invalid
                 LOCATION_ERROR_NOT_SUPPORTED if build is not userdebug */
-    virtual uint32_t gnssDeleteAidingData(GnssAidingData& data) override;
+    virtual uint32_t gnssDeleteAidingData(const GnssAidingData& data) override;
 
     /** @brief
         Configure the constellation and SVs to be used by the GNSS engine on
@@ -688,7 +688,7 @@ public:
 
     */
     virtual void updateConnectionStatus(bool connected, int8_t type, bool roaming,
-            NetworkHandle networkHandle, std::string& apn) override;
+            NetworkHandle networkHandle, const std::string& apn) override;
 
     /** @brief
         Set measurement correction
@@ -696,7 +696,7 @@ public:
         @param
         gnssMeasCorr GnssMeasurementCorrections structure
     */
-    virtual bool measCorrSetCorrections(const GnssMeasurementCorrections gnssMeasCorr) override;
+    virtual bool measCorrSetCorrections(const GnssMeasurementCorrections& gnssMeasCorr) override;
 
     /** @brief
         Close measurement corrections interface
@@ -709,7 +709,7 @@ public:
         @param
         enable: true/false to enable / disable permission
     */
-    virtual void enableNfwLocationAccess(std::vector<std::string>& enabledNfws) override;
+    virtual void enableNfwLocationAccess(const std::vector<std::string>& enabledNfws) override;
 
     /** @brief
         This API is used to instruct the specified engine to use

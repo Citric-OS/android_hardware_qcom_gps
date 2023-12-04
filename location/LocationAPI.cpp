@@ -465,7 +465,7 @@ LocationAPI::updateCallbacks(LocationCallbacks& locationCallbacks)
 }
 
 uint32_t
-LocationAPI::startTracking(TrackingOptions& trackingOptions)
+LocationAPI::startTracking(const TrackingOptions& trackingOptions)
 {
     uint32_t id = 0;
     pthread_mutex_lock(&gDataMutex);
@@ -510,7 +510,7 @@ LocationAPI::stopTracking(uint32_t id)
 
 void
 LocationAPI::updateTrackingOptions(
-        uint32_t id, TrackingOptions& trackingOptions)
+        uint32_t id, const TrackingOptions& trackingOptions)
 {
     pthread_mutex_lock(&gDataMutex);
 
@@ -531,7 +531,7 @@ LocationAPI::updateTrackingOptions(
 }
 
 uint32_t
-LocationAPI::startBatching(BatchingOptions &batchingOptions)
+LocationAPI::startBatching(const BatchingOptions &batchingOptions)
 {
     uint32_t id = 0;
     pthread_mutex_lock(&gDataMutex);
@@ -563,7 +563,7 @@ LocationAPI::stopBatching(uint32_t id)
 }
 
 void
-LocationAPI::updateBatchingOptions(uint32_t id, BatchingOptions& batchOptions)
+LocationAPI::updateBatchingOptions(uint32_t id, const BatchingOptions& batchOptions)
 {
     pthread_mutex_lock(&gDataMutex);
 
@@ -889,7 +889,7 @@ uint32_t* LocationControlAPI::gnssGetConfig(GnssConfigFlagsMask mask) {
 }
 
 uint32_t
-LocationControlAPI::gnssDeleteAidingData(GnssAidingData& data)
+LocationControlAPI::gnssDeleteAidingData(const GnssAidingData& data)
 {
     uint32_t id = 0;
     pthread_mutex_lock(&gDataMutex);
@@ -1224,7 +1224,7 @@ void LocationControlAPI::agpsDataConnFailed(AGpsType agpsType) {
 }
 
 void LocationControlAPI::updateConnectionStatus(bool connected, int8_t type, bool roaming,
-        NetworkHandle networkHandle, std::string& apn) {
+        NetworkHandle networkHandle, const std::string& apn) {
     pthread_mutex_lock(&gDataMutex);
 
     if (gData.gnssInterface != NULL) {
@@ -1239,7 +1239,7 @@ void LocationControlAPI::updateConnectionStatus(bool connected, int8_t type, boo
 }
 
 bool LocationControlAPI::measCorrSetCorrections(
-        const GnssMeasurementCorrections gnssMeasCorr) {
+        const GnssMeasurementCorrections& gnssMeasCorr) {
     pthread_mutex_lock(&gDataMutex);
     bool retVal = 0;
 
@@ -1268,7 +1268,7 @@ void LocationControlAPI::measCorrClose() {
 
 }
 
-void LocationControlAPI::enableNfwLocationAccess(std::vector<std::string>& enabledNfws) {
+void LocationControlAPI::enableNfwLocationAccess(const std::vector<std::string>& enabledNfws) {
     pthread_mutex_lock(&gDataMutex);
 
     if (gData.gnssInterface != NULL) {

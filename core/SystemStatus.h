@@ -968,7 +968,7 @@ public:
             bool inSessionOnly = true) const;
     bool setDefaultGnssEngineStates(void);
     bool eventConnectionStatus(bool connected, int8_t type,
-                               bool roaming, NetworkHandle networkHandle, string& apn);
+                               bool roaming, NetworkHandle networkHandle, const string& apn);
     bool updatePowerConnectState(bool charging);
     void resetNetworkInfo();
     bool eventOptInStatus(bool userConsent);
