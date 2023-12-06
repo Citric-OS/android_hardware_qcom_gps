@@ -268,6 +268,8 @@ typedef uint64_t GnssLocationInfoFlagMask;
 #define LDT_GNSS_LOCATION_INFO_PROTECT_CROSS_TRACK_BIT (1ULL<<35) // Cross-track protection level
 #define LDT_GNSS_LOCATION_INFO_PROTECT_VERTICAL_BIT (1ULL<<36) // vertical protection level
 #define LDT_GNSS_LOCATION_INFO_DGNSS_STATION_ID_BIT (1ULL<<37) // dgnss station id
+#define LDT_GNSS_LOCATION_INFO_GPTP_TIME_BIT        (1ULL<<38) // GPTP time validity
+#define LDT_GNSS_LOCATION_INFO_GPTP_TIME_UNC_BIT    (1ULL<<39) // GPTP time Uncertainity validity
 
 typedef enum {
     GEOFENCE_BREACH_ENTER = 0,
@@ -800,6 +802,9 @@ typedef enum {
     GNSS_MEASUREMENTS_CLOCK_FLAGS_DRIFT_UNCERTAINTY_BIT            = (1<<7),
     GNSS_MEASUREMENTS_CLOCK_FLAGS_HW_CLOCK_DISCONTINUITY_COUNT_BIT = (1<<8),
     GNSS_MEASUREMENTS_CLOCK_FLAGS_ELAPSED_REAL_TIME_BIT            = (1<<9),
+    GNSS_MEASUREMENTS_CLOCK_FLAGS_ELAPSED_REAL_TIME_UNC_BIT        = (1<<10),
+    GNSS_MEASUREMENTS_CLOCK_FLAGS_ELAPSED_GPTP_TIME_BIT            = (1<<11),
+    GNSS_MEASUREMENTS_CLOCK_FLAGS_ELAPSED_GPTP_TIME_UNC_BIT        = (1<<12),
 } GnssMeasurementsClockFlagsBits;
 
 typedef uint32_t GnssAidingDataSvMask;
@@ -814,9 +819,9 @@ typedef enum {
     GNSS_AIDING_DATA_SV_SA_DATA_BIT      = (1<<7), // sensitivity assistance data
     GNSS_AIDING_DATA_SV_NO_EXIST_BIT     = (1<<8), // SV does not exist
     GNSS_AIDING_DATA_SV_IONOSPHERE_BIT   = (1<<9), // ionosphere correction
-    GNSS_AIDING_DATA_SV_TIME_BIT         = (1<<10),// reset satellite time
-    GNSS_AIDING_DATA_SV_MB_DATA          = (1<<11),// delete multiband data
-    GNSS_AIDING_DATA_SV_POLY_BIT         = (1<<12),// poly
+    GNSS_AIDING_DATA_SV_TIME_BIT         = (1<<10), // reset satellite time
+    GNSS_AIDING_DATA_SV_MB_DATA          = (1<<11), // delete multiband data
+    GNSS_AIDING_DATA_SV_POLY_BIT         = (1<<12), // poly
 } GnssAidingDataSvBits;
 
 typedef uint32_t GnssAidingDataSvTypeMask;
@@ -912,8 +917,7 @@ typedef enum {
      GNSS_SIGNAL_NAVIC_L5 | GNSS_SIGNAL_BEIDOU_B2AQ | GNSS_SIGNAL_BEIDOU_B2BI |\
      GNSS_SIGNAL_BEIDOU_B2BQ)
 
-typedef enum
-{
+typedef enum {
     GNSS_LOC_SV_SYSTEM_UNKNOWN                = 0,
     /** unknown sv system. */
     GNSS_LOC_SV_SYSTEM_MIN                    = 1,
@@ -1389,7 +1393,8 @@ typedef struct {
          due to possible discontinuities.
          Unit: Millisecond */
     uint32_t refFCount;
-    /** Number of clock resets/discontinuities detected, affecting the local hardware counter value. */
+    /** Number of clock resets/discontinuities detected,
+        affecting the local hardware counter value. */
     uint32_t numClockResets;
 
     inline bool hasAccurateTime() const {
@@ -1433,7 +1438,8 @@ typedef struct {
         due to possible discontinuities.
         Unit: Millisecond */
     uint32_t  refFCount;
-    /** Number of clock resets/discontinuities detected, affecting the local hardware counter value. */
+    /** Number of clock resets/discontinuities detected,
+        affecting the local hardware counter value. */
     uint32_t numClockResets;
     /** GLONASS four year number from 1996. Refer to GLONASS ICD.
         Applicable only for GLONASS and shall be ignored for other constellations.
@@ -1582,6 +1588,11 @@ typedef struct {
     //   - Monitoring station -- 1000-2023 (Station ID biased by 1000).
     //   - Other values reserved.
     uint16_t dgnssStationId[DGNSS_STATION_ID_MAX];
+    // GPTP time field in ns
+    uint64_t elapsedgPTPTime;
+    // GPTP time Unc
+    uint64_t elapsedgPTPTimeUnc;
+
 } GnssLocationInfoNotification;
 
 // Indicate the API that is called to generate the location report
@@ -1835,6 +1846,8 @@ typedef struct {
     GnssMeasurementsSignalType referenceSignalTypeForIsb;
     uint64_t elapsedRealTime;    // in ns
     uint64_t elapsedRealTimeUnc; // in ns
+    uint64_t elapsedgPTPTime;    // in ns
+    uint64_t elapsedgPTPTimeUnc; // in ns
 } GnssMeasurementsClock;
 
 typedef struct {

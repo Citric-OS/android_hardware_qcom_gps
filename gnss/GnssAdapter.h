@@ -312,7 +312,7 @@ class GnssAdapter : public LocAdapterBase {
     powerIndicationCb mPowerIndicationCb;
     bool mGnssPowerStatisticsInit;
     uint64_t mBootReferenceEnergy;
-    ElapsedRealtimeEstimator mPowerElapsedRealTimeCal;
+    RealtimeEstimator mPowerElapsedRealTimeCal;
 
     /* ==== Measurement Corrections========================================================= */
     bool mIsMeasCorrInterfaceOpen;
@@ -366,7 +366,7 @@ class GnssAdapter : public LocAdapterBase {
     GnssReportLoggerUtil mLogger;
     bool mEngHubLoadSuccessful;
     EngineServiceInfo mEngServiceInfo;
-    ElapsedRealtimeEstimator mPositionElapsedRealTimeCal;
+    RealtimeEstimator mPositionElapsedRealTimeCal;
     typedef enum {
         HMAC_CONFIG_UNKNOWN = 0,
         HMAC_CONFIG_DISABLED,
@@ -408,7 +408,7 @@ class GnssAdapter : public LocAdapterBase {
     inline void injectLocationAndAddr(const Location& location, const GnssCivicAddress& addr)
     { mLocApi->injectPositionAndCivicAddress(location, addr);}
     void fillElapsedRealTime(const GpsLocationExtended& locationExtended,
-                             Location& out);
+                             GnssLocationInfoNotification& out);
     void combineBlacklistSvs(const GnssSvIdConfig& blacklistSvs,
             const GnssSvTypeConfig& constellationConfig,
             GnssSvIdConfig& combinedBlacklistSvs);
@@ -656,7 +656,7 @@ public:
     /* ==== REPORTS ======================================================================== */
     virtual void handleEngineLockStatusEvent(EngineLockState engineLockState);
     void handleEngineLockStatus(EngineLockState engineLockState);
-    /* ======== EVENTS ====(Called from QMI/EngineHub Thread)===================================== */
+    /* ======== EVENTS ====(Called from QMI/EngineHub Thread)================================== */
     virtual void reportPositionEvent(const UlpLocation& ulpLocation,
                                      const GpsLocationExtended& locationExtended,
                                      enum loc_sess_status status,
