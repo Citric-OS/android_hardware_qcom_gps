@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -69,7 +69,7 @@ public:
 
     // callbacks
     void onCapabilitiesCb(LocationCapabilitiesMask capabilitiesMask) final;
-    void onBatchingCb(size_t count, Location* location, BatchingOptions batchOptions) final;
+    void onBatchingCb(size_t count, Location* location, const BatchingOptions& batchOptions) final;
 
 private:
     ~BatchingAPIClient();

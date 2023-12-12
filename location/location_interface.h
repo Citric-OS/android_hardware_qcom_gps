@@ -91,8 +91,8 @@ struct GnssInterface {
     void (*addClient)(LocationAPI* client, const LocationCallbacks& callbacks);
     void (*removeClient)(LocationAPI* client, removeClientCompleteCallback rmClientCb);
     void (*requestCapabilities)(LocationAPI* client);
-    uint32_t (*startTracking)(LocationAPI* client, TrackingOptions&);
-    void (*updateTrackingOptions)(LocationAPI* client, uint32_t id, TrackingOptions&);
+    uint32_t (*startTracking)(LocationAPI* client, const TrackingOptions&);
+    void (*updateTrackingOptions)(LocationAPI* client, uint32_t id, const TrackingOptions&);
     void (*stopTracking)(LocationAPI* client, uint32_t id);
     void (*gnssNiResponse)(LocationAPI* client, uint32_t id, GnssNiResponse response);
     void (*setControlCallbacks)(LocationControlCallbacks& controlCallbacks);
@@ -100,10 +100,10 @@ struct GnssInterface {
     void (*disable)(uint32_t id);
     uint32_t* (*gnssUpdateConfig)(const GnssConfig& config);
     uint32_t* (*gnssGetConfig)(GnssConfigFlagsMask config);
-    void (*gnssUpdateSvTypeConfig)(GnssSvTypeConfig& config);
+    void (*gnssUpdateSvTypeConfig)(const GnssSvTypeConfig& config);
     void (*gnssGetSvTypeConfig)(GnssSvTypeConfigCallback& callback);
     void (*gnssResetSvTypeConfig)();
-    uint32_t (*gnssDeleteAidingData)(GnssAidingData& data);
+    uint32_t (*gnssDeleteAidingData)(const GnssAidingData& data);
     void (*gnssUpdateXtraThrottle)(const bool enabled);
     void (*injectLocation)(double latitude, double longitude, float accuracy);
     void (*injectTime)(int64_t time, int64_t timeReference, int32_t uncertainty);
@@ -113,7 +113,7 @@ struct GnssInterface {
     void (*agpsDataConnFailed)(AGpsExtType agpsType);
     void (*getDebugReport)(GnssDebugReport& report);
     void (*updateConnectionStatus)(bool connected, int8_t type, bool roaming,
-                                   NetworkHandle networkHandle, std::string& apn);
+                                   NetworkHandle networkHandle, const std::string& apn);
     void (*odcpiInit)(const odcpiRequestCallback& callback, OdcpiPrioritytype priority,
            OdcpiCallbackTypeMask typeMask);
     void (*deRegisterOdcpi)(OdcpiPrioritytype priority, OdcpiCallbackTypeMask typeMask);
@@ -122,7 +122,7 @@ struct GnssInterface {
                      int blockDurationMsec, double latLonDiffThreshold);
     void (*setEsStatusCallback)(std::function<void(bool)> esStatusCb);
     void (*getGnssEnergyConsumed)(GnssEnergyConsumedCallback energyConsumedCb);
-    void (*enableNfwLocationAccess)(std::vector<std::string>& enabledNfws);
+    void (*enableNfwLocationAccess)(const std::vector<std::string>& enabledNfws);
     void (*nfwInit)(const NfwCbInfo& cbInfo);
     void (*getPowerStateChanges)(std::function<void(bool)> powerStateCb);
     void (*injectLocationExt)(const GnssLocationInfoNotification &locationInfo);
@@ -134,7 +134,7 @@ struct GnssInterface {
                                    const GnssSvIdConfig&   blacklistSvConfig);
     uint32_t (*configLeverArm)(const LeverArmConfigInfo& configInfo);
     bool (*measCorrInit)(const measCorrSetCapabilitiesCallback setCapabilitiesCb);
-    bool (*measCorrSetCorrections)(const GnssMeasurementCorrections gnssMeasCorr);
+    bool (*measCorrSetCorrections)(const GnssMeasurementCorrections& gnssMeasCorr);
     void (*measCorrClose)();
     uint32_t (*getAntennaInfo)(AntennaInfoCallback* antennaInfoCallback);
     uint32_t (*configRobustLocation)(bool enable, bool enableForE911);
@@ -160,7 +160,7 @@ struct GnssInterface {
     uint32_t (*configXtraParams) (bool enable, const XtraConfigParams& configParams);
     uint32_t (*gnssGetXtraStatus)();
     uint32_t (*gnssRegisterXtraStatusUpdate)(bool registerUpdate);
-    void (*configPrecisePositioning)(uint32_t featureId, bool enable, std::string appHash);
+    void (*configPrecisePositioning)(uint32_t featureId, bool enable, const std::string& appHash);
     uint32_t (*configMerkleTree) (const char * merkleTreeConfigBuffer, int bufferLength);
     uint32_t (*configOsnmaEnablement) (bool enable);
 };
@@ -172,9 +172,9 @@ struct BatchingInterface {
     void (*addClient)(LocationAPI* client, const LocationCallbacks& callbacks);
     void (*removeClient)(LocationAPI* client, removeClientCompleteCallback rmClientCb);
     void (*requestCapabilities)(LocationAPI* client);
-    uint32_t (*startBatching)(LocationAPI* client, BatchingOptions&);
+    uint32_t (*startBatching)(LocationAPI* client, const BatchingOptions&);
     void (*stopBatching)(LocationAPI* client, uint32_t id);
-    void (*updateBatchingOptions)(LocationAPI* client, uint32_t id, BatchingOptions&);
+    void (*updateBatchingOptions)(LocationAPI* client, uint32_t id, const BatchingOptions&);
     void (*getBatchedLocations)(LocationAPI* client, uint32_t id, size_t count);
     void (*updateSystemPowerState)(PowerStateType systemPowerState);
 };

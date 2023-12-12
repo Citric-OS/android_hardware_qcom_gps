@@ -114,7 +114,7 @@ public:
     void onCapabilitiesCb(LocationCapabilitiesMask capabilitiesMask) final;
     void onTrackingCb(const Location& location) final;
     void onGnssSvCb(const GnssSvNotification& gnssSvNotification) final;
-    void onGnssNmeaCb(GnssNmeaNotification gnssNmeaNotification) final;
+    void onGnssNmeaCb(const GnssNmeaNotification& gnssNmeaNotification) final;
     void onEngineLocationsInfoCb(uint32_t count,
             GnssLocationInfoNotification* engineLocationInfoNotification);
     void onGnssSignalTypesCb(const GnssCapabNotification& gnssCapabNotification);

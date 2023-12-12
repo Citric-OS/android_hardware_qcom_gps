@@ -95,7 +95,7 @@ GnssVisibilityControl::~GnssVisibilityControl() {
     spGnssVisibilityControl = nullptr;
 }
 
-void GnssVisibilityControl::nfwStatusCb(GnssNfwNotification notification) {
+void GnssVisibilityControl::nfwStatusCb(const GnssNfwNotification& notification) {
     if (nullptr != spGnssVisibilityControl) {
         spGnssVisibilityControl->statusCb(notification);
     }
@@ -122,7 +122,7 @@ static void convertGnssNfwNotification(GnssNfwNotification& in,
     out.isCachedLocation = in.isCachedLocation;
 }
 
-void GnssVisibilityControl::statusCb(GnssNfwNotification notification) {
+void GnssVisibilityControl::statusCb(const GnssNfwNotification& notification) {
 
     if (mGnssVisibilityControlCbIface != nullptr) {
         IGnssVisibilityControlCallback::NfwNotification nfwNotification;
