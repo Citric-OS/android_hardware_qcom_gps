@@ -397,6 +397,12 @@ typedef uint64_t LocationCapabilitiesMask;
 #define   LOCATION_CAPABILITIES_NLOS_ML20                             (1ULL<<36)
 // This mask indicates if NHz is enableD
 #define   LOCATION_CAPABILITIES_QWES_GNSS_NHZ                         (1ULL<<37)
+// This mask indicates wwan standard positioning is
+// enabled by QWES license.
+#define   LOCATION_CAPABILITIES_QWES_WWAN_STANDARD_POSITIONING        (1ULL<<38)
+// This mask indicates wwan premium positioning is
+// enabled by QWES license.
+#define   LOCATION_CAPABILITIES_QWES_WWAN_PREMIUM_POSITIONING         (1ULL<<39)
 
 typedef uint8_t LocationQwesFeatureType;
 enum LocationQwesFeatureTypes {
@@ -456,8 +462,14 @@ enum LocationQwesFeatureTypes {
     LOCATION_QWES_FEATURE_TYPE_RTT_POSITIONING               = 19,
     // This indicates if NHz feature is supported
     LOCATION_QWES_FEATURE_STATUS_GNSS_NHZ                    = 20,
+    // This indicates wwan standard positioning is
+    // enabled by QWES license.
+    LOCATION_QWES_FEATURE_TYPE_WWAN_STANDARD_POSITIONING     = 21,
+    // This indicates wwan premium positioning is
+    // enabled by QWES license.
+    LOCATION_QWES_FEATURE_TYPE_WWAN_PREMIUM_POSITIONING      = 22,
     // Max value
-    LOCATION_QWES_FEATURE_TYPE_MAX                           = 21
+    LOCATION_QWES_FEATURE_TYPE_MAX                           = 23
 };
 
 typedef uint64_t LocationHwCapabilitiesMask;
