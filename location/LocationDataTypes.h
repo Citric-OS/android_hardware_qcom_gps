@@ -29,7 +29,7 @@
 /*
 Changes from Qualcomm Innovation Center are provided under the following license:
 
-Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -128,6 +128,8 @@ typedef enum {
     LOCATION_HAS_TECH_MASK_BIT         = (1<<12), // location has valid tech mask
     LOCATION_HAS_TIME_UNC_BIT          = (1<<13), // location has timeUncMs
     LOCATION_HAS_SYSTEM_TICK_BIT       = (1<<14), // location has system Tick for qtimer tick count
+    LOCATION_HAS_GPTP_TIME_BIT         = (1<<15), // location has valid GPTP time
+    LOCATION_HAS_GPTP_TIME_UNC_BIT     = (1<<16), // location has valid GPTP time Uncertainity
 } LocationFlagsBits;
 
 typedef uint16_t LocationTechnologyMask;
@@ -268,8 +270,6 @@ typedef uint64_t GnssLocationInfoFlagMask;
 #define LDT_GNSS_LOCATION_INFO_PROTECT_CROSS_TRACK_BIT (1ULL<<35) // Cross-track protection level
 #define LDT_GNSS_LOCATION_INFO_PROTECT_VERTICAL_BIT (1ULL<<36) // vertical protection level
 #define LDT_GNSS_LOCATION_INFO_DGNSS_STATION_ID_BIT (1ULL<<37) // dgnss station id
-#define LDT_GNSS_LOCATION_INFO_GPTP_TIME_BIT        (1ULL<<38) // GPTP time validity
-#define LDT_GNSS_LOCATION_INFO_GPTP_TIME_UNC_BIT    (1ULL<<39) // GPTP time Uncertainity validity
 
 typedef enum {
     GEOFENCE_BREACH_ENTER = 0,
@@ -1135,6 +1135,10 @@ typedef struct {
                                  // SPE report: confidence level is 99%
                                  // Other engine report: confidence not unspecified
     uint64_t systemTick;        // System Tick at GPS Time
+    // GPTP time field in ns
+    uint64_t elapsedgPTPTime;
+    // GPTP time Unc
+    uint64_t elapsedgPTPTimeUnc;
 } Location;
 
 typedef enum {
@@ -1588,11 +1592,6 @@ typedef struct {
     //   - Monitoring station -- 1000-2023 (Station ID biased by 1000).
     //   - Other values reserved.
     uint16_t dgnssStationId[DGNSS_STATION_ID_MAX];
-    // GPTP time field in ns
-    uint64_t elapsedgPTPTime;
-    // GPTP time Unc
-    uint64_t elapsedgPTPTimeUnc;
-
 } GnssLocationInfoNotification;
 
 // Indicate the API that is called to generate the location report

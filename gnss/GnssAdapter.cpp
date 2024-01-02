@@ -30,7 +30,7 @@
 /*
 Changes from Qualcomm Innovation Center are provided under the following license:
 
-Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -493,13 +493,10 @@ void GnssAdapter::fillElapsedRealTime(const GpsLocationExtended& locationExtende
             out.location.elapsedRealTimeUnc = (int64_t) (elapsedTimeUncMsec * 1000000);
 
             if (gptpTimeValid) {
-                out.flags |= LDT_GNSS_LOCATION_INFO_GPTP_TIME_BIT;
-                out.elapsedgPTPTime = elapsedgPTPTimeNsec;
-                out.flags |= LDT_GNSS_LOCATION_INFO_GPTP_TIME_UNC_BIT;
-                out.elapsedgPTPTimeUnc = 0;
-            } else {
-                out.elapsedgPTPTime = 0;
-                out.elapsedgPTPTimeUnc = 0;
+                out.location.flags |= LOCATION_HAS_GPTP_TIME_BIT;
+                out.location.elapsedgPTPTime = elapsedgPTPTimeNsec;
+                out.location.flags |= LOCATION_HAS_GPTP_TIME_UNC_BIT;
+                out.location.elapsedgPTPTimeUnc = 0;
             }
         }
 #ifndef FEATURE_AUTOMOTIVE
