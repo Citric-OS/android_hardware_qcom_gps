@@ -29,7 +29,7 @@
 /*
 Changes from Qualcomm Innovation Center are provided under the following license:
 
-Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -1403,9 +1403,6 @@ typedef struct {
                 // 65535 GPS week from modem means unknown
                 (systemWeek != UNKNOWN_GPS_WEEK_NUM) &&
                 (validityMask & GNSS_SYSTEM_TIME_WEEK_MS_VALID) &&
-                (validityMask & GNSS_SYSTEM_CLK_TIME_BIAS_VALID) &&
-                (systemClkTimeBias != 0.0f) &&
-                (systemClkTimeBias < REAL_TIME_ESTIMATOR_TIME_UNC_THRESHOLD_MSEC) &&
                 (validityMask & GNSS_SYSTEM_CLK_TIME_BIAS_UNC_VALID) &&
                 (systemClkTimeUncMs != 0.0f) &&
                 (systemClkTimeUncMs < REAL_TIME_ESTIMATOR_TIME_UNC_THRESHOLD_MSEC)) {
