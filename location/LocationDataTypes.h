@@ -1407,9 +1407,6 @@ typedef struct {
                 // 65535 GPS week from modem means unknown
                 (systemWeek != UNKNOWN_GPS_WEEK_NUM) &&
                 (validityMask & GNSS_SYSTEM_TIME_WEEK_MS_VALID) &&
-                (validityMask & GNSS_SYSTEM_CLK_TIME_BIAS_VALID) &&
-                (systemClkTimeBias != 0.0f) &&
-                (systemClkTimeBias < REAL_TIME_ESTIMATOR_TIME_UNC_THRESHOLD_MSEC) &&
                 (validityMask & GNSS_SYSTEM_CLK_TIME_BIAS_UNC_VALID) &&
                 (systemClkTimeUncMs != 0.0f) &&
                 (systemClkTimeUncMs < REAL_TIME_ESTIMATOR_TIME_UNC_THRESHOLD_MSEC)) {
