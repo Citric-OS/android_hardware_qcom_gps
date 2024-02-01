@@ -267,7 +267,7 @@ GnssAdapter::GnssAdapter() :
     initEngHubProxyCommand();
     initLocGlinkCommand();
     testLaunchQppeBringUp();
-
+    mXtraObserver.init();
     // at last step, let us inform adapater base that we are done
     // with initialization, e.g.: ready to process handleEngineUpEvent
     doneInit();
