@@ -71,6 +71,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <list>
 #include <string.h>
 #include <string>
+#include <time.h>
 
 #define GNSS_NI_REQUESTOR_MAX  (256)
 #define GNSS_NI_MESSAGE_ID_MAX (2048)
@@ -1407,9 +1408,6 @@ typedef struct {
                 // 65535 GPS week from modem means unknown
                 (systemWeek != UNKNOWN_GPS_WEEK_NUM) &&
                 (validityMask & GNSS_SYSTEM_TIME_WEEK_MS_VALID) &&
-                (validityMask & GNSS_SYSTEM_CLK_TIME_BIAS_VALID) &&
-                (systemClkTimeBias != 0.0f) &&
-                (systemClkTimeBias < REAL_TIME_ESTIMATOR_TIME_UNC_THRESHOLD_MSEC) &&
                 (validityMask & GNSS_SYSTEM_CLK_TIME_BIAS_UNC_VALID) &&
                 (systemClkTimeUncMs != 0.0f) &&
                 (systemClkTimeUncMs < REAL_TIME_ESTIMATOR_TIME_UNC_THRESHOLD_MSEC)) {
