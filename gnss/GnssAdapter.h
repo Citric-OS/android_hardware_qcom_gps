@@ -30,7 +30,7 @@
 /*
 Changes from Qualcomm Innovation Center are provided under the following license:
 
-Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -391,6 +391,22 @@ class GnssAdapter : public LocAdapterBase {
                                     loc_sess_status status);
     static uint16_t getNumSvUsed(uint64_t svUsedIdsMask,
                                  int totalSvCntInThisConstellation);
+
+    static bool isEphNetworkBased(const GnssEphCommon& commanEphRpt);
+    static void convertGpsEphemeris(const GpsEphemerisResponse& ephRpt,
+            GpsEphemerisResponse& halEph);
+    static void convertGalEphemeris(const GalileoEphemerisResponse& ephRpt,
+            GalileoEphemerisResponse& halEph);
+    static void convertGloEphemeris(const GlonassEphemerisResponse& ephRpt,
+            GlonassEphemerisResponse& halEph);
+    static void convertBdsEphemeris(const BdsEphemerisResponse& ephRpt,
+            BdsEphemerisResponse& halEph);
+    static void convertQzssEphemeris(const QzssEphemerisResponse& ephRpt,
+            QzssEphemerisResponse& halEph);
+    static void convertNavicEphemeris(const NavicEphemerisResponse& ephRpt,
+            NavicEphemerisResponse& halEph);
+    static void convertEphReportInfo(const GnssSvEphemerisReport& svEphemeris,
+            GnssSvEphemerisReport& ephInfo, bool& needToReportEph);
 
     /* ======== UTILITIES ================================================================== */
     inline void initOdcpi(const odcpiRequestCallback& callback,
@@ -754,6 +770,7 @@ public:
             mControlCallbacks.nfwStatusCb(notification);
         }
     }
+    void reportSvEphemerisData (const GnssSvEphemerisReport& svEphemeris);
     inline bool getE911State(GnssNiType niType) {
         if (NULL != mControlCallbacks.isInEmergencyStatusCb) {
             return mControlCallbacks.isInEmergencyStatusCb();
