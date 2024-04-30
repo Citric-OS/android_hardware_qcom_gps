@@ -29,7 +29,7 @@
 /*
 Changes from Qualcomm Innovation Center are provided under the following license:
 
-Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -684,6 +684,10 @@ typedef struct {
     //   - Monitoring station -- 1000-2023 (Station ID biased by 1000).
     //   - Other values reserved.
     uint16_t dgnssStationId[DGNSS_STATION_ID_MAX];
+
+    /** Uncertainty for the GNSS leap second.
+     *  Units -- Seconds */
+    uint8_t leapSecondsUnc;
     /** helper function to check sanity of accurate time */
     bool isReportTimeAccurate() const {
         return ((gnssSystemTime.hasAccurateGpsTime() == true) &&
