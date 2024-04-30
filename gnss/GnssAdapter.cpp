@@ -1258,11 +1258,17 @@ GnssAdapter::setConfig()
         mLocApi->setPositionAssistedClockEstimatorMode(
                 mLocConfigInfo.paceConfigInfo.enable);
 
-        // robust location to be disabled on bootup by default
         if (mLocConfigInfo.robustLocationConfigInfo.isValid == false) {
             mLocConfigInfo.robustLocationConfigInfo.isValid = true;
+            // robust location to be enabled on bootup for auto targets
+#ifdef FEATURE_AUTOMOTIVE
+            mLocConfigInfo.robustLocationConfigInfo.enable = true;
+            mLocConfigInfo.robustLocationConfigInfo.enableFor911 = true;
+#else
+            // robust location to be disabled on bootup for non-auto targets
             mLocConfigInfo.robustLocationConfigInfo.enable = false;
             mLocConfigInfo.robustLocationConfigInfo.enableFor911 = false;
+#endif
         }
         mLocApi->configRobustLocation(
                 mLocConfigInfo.robustLocationConfigInfo.enable,
