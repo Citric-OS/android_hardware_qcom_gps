@@ -115,7 +115,7 @@ enum LocationError {
 };
 
 // Flags to indicate which values are valid in a Location
-typedef uint16_t LocationFlagsMask;
+typedef uint32_t LocationFlagsMask;
 enum LocationFlagsBits {
     LOCATION_HAS_LAT_LONG_BIT          = (1<<0), // location has valid latitude and longitude
     LOCATION_HAS_ALTITUDE_BIT          = (1<<1), // location has valid altitude
@@ -134,7 +134,8 @@ enum LocationFlagsBits {
     LOCATION_HAS_SYSTEM_TICK_BIT       = (1<<14), // location has system Tick for qtimer tick count
     LOCATION_HAS_GPTP_TIME_BIT         = (1<<15), // location has valid GPTP time
     LOCATION_HAS_GPTP_TIME_UNC_BIT     = (1<<16), // location has valid GPTP time Uncertainity
-} ;
+    LOCATION_HAS_SESSION_STATUS_BIT    = (1<<17), // location has session status
+};
 
 typedef uint16_t LocationTechnologyMask;
 // mask indicating location calculations including...
@@ -1144,10 +1145,16 @@ enum LocationQualityType {
     LOCATION_FIXED_QUALITY_TYPE = 3,
 };
 
+enum loc_sess_status {
+    LOC_SESS_SUCCESS,
+    LOC_SESS_INTERMEDIATE,
+    LOC_SESS_FAILURE
+};
 
 struct Location {
     uint32_t size;           // set to sizeof(Location)
     LocationFlagsMask flags; // bitwise OR of LocationFlagsBits to mark which params are valid
+    loc_sess_status sessionStatus; // location session status
     uint64_t timestamp;      // UTC timestamp for location fix, milliseconds since January 1, 1970
     double latitude;         // in degrees
     double longitude;        // in degrees
@@ -1172,10 +1179,8 @@ struct Location {
                                  // SPE report: confidence level is 99%
                                  // Other engine report: confidence not unspecified
     uint64_t systemTick;        // System Tick at GPS Time
-    // GPTP time field in ns
-    uint64_t elapsedgPTPTime;
-    // GPTP time Unc
-    uint64_t elapsedgPTPTimeUnc;
+    uint64_t elapsedgPTPTime;    // GPTP time field in ns
+    uint64_t elapsedgPTPTimeUnc; // GPTP time Unc
 };
 
 enum LocReqEngineTypeMask {
@@ -1538,12 +1543,6 @@ struct LLAInfo {
     double latitude;  // in degree
     double longitude; // in degree
     float altitude;  // altitude wrt to ellipsoid
-};
-
-enum loc_sess_status {
-    LOC_SESS_SUCCESS,
-    LOC_SESS_INTERMEDIATE,
-    LOC_SESS_FAILURE
 };
 
 struct GnssLocationInfoNotification {
