@@ -29,7 +29,7 @@
 /*
 Changes from Qualcomm Innovation Center are provided under the following license:
 
-Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -67,16 +67,56 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define SINGLE_SHOT_MIN_TRACKING_INTERVAL_MSEC (590 * 60 * 60 * 1000) // 590 hours
 #include <log_util.h>
 #include <loc_cfg.h>
+#include <fstream>
 
 #include "GnssAPIClient.h"
 #include <LocContext.h>
 #include "LocationUtil.h"
+
+#define META_INFO_FILE "/vendor/firmware_mnt/verinfo/ver_info.txt"
+#define DELIMITER ";"
 
 namespace android {
 namespace hardware {
 namespace gnss {
 namespace aidl {
 namespace implementation {
+
+static std::string getVersionString() {
+    static std::string version;
+    if (!version.empty()) {
+        return version;
+    }
+
+    char value[PROPERTY_VALUE_MAX] = {0};
+    property_get("ro.hardware", value, "unknown");
+    version.append(value).append(DELIMITER);
+
+    std::ifstream in(META_INFO_FILE);
+    std::string s;
+    while (getline(in, s)) {
+        std::size_t found = s.find("\"modem\":");
+        if (std::string::npos == found) {
+            continue;
+        }
+
+        // skip over space characters after "modem":
+        const char* substr = s.c_str();
+        found += strlen("\"modem\":");
+        while (0 != substr[found] && isspace(substr[found])) {
+            found++;
+        }
+        s.erase(0, found + 1);
+        std::size_t end = s.find_last_of("\"");
+        if (std::string::npos != end) {
+            s.erase(s.begin() + end, s.end());
+        }
+        version.append(s).append(DELIMITER);
+        break;
+    }
+    LOC_LOGd("version=%s", version.c_str());
+    return version;
+}
 
 static void convertGnssSvStatus(const GnssSvNotification& in,
         std::vector<IGnssCallback::GnssSvInfo>& out) {
@@ -446,7 +486,7 @@ void GnssAPIClient::updateCapabilities(LocationCapabilitiesMask capabilitiesMask
         data |= IGnssCallback::CAPABILITY_ACCUMULATED_DELTA_RANGE;
     }
 
-    IGnssCallback::GnssSystemInfo gnssInfo = { .yearOfHw = 2015, "aidl-impl" };
+    IGnssCallback::GnssSystemInfo gnssInfo = { .yearOfHw = 2015, getVersionString() };
 
     if (capabilitiesMask & LOCATION_CAPABILITIES_GNSS_MEASUREMENTS_BIT) {
         gnssInfo.yearOfHw++; // 2016

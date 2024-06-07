@@ -2,6 +2,7 @@
 # not want vendor location modules built should be
 # added to this exclude list to prevent building
 LOC_BOARD_PLATFORM_EXCLUDE_LIST := anorak
+LOC_BOARD_PLATFORM_EXCLUDE_LIST += niobe
 
 # Define BOARD_VENDOR_QCOM_GPS_LOC_API_HARDWARE if:
 # EXCLUDE_LOCATION_FEATURES is not true AND
