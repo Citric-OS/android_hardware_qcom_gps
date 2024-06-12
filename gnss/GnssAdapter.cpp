@@ -527,6 +527,7 @@ void GnssAdapter::fillElapsedRealTime(const GpsLocationExtended& locationExtende
     if (!(out.location.flags & LOCATION_HAS_ELAPSED_REAL_TIME_BIT)) {
         out.location.elapsedRealTime = getBootTimeMilliSec() * 1000000;
         out.location.elapsedRealTimeUnc = mPositionElapsedRealTimeCal.getElapsedRealtimeUncNanos();
+        out.location.flags |= LOCATION_HAS_ELAPSED_REAL_TIME_BIT;
     }
 #endif //FEATURE_AUTOMOTIVE
 }
