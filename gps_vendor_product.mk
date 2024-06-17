@@ -46,3 +46,7 @@ ifeq ($(strip $(TARGET_BOARD_AUTO)),true)
 endif #TARGET_BOARD_AUTO
 
 endif # ifneq ($(BOARD_VENDOR_QCOM_GPS_LOC_API_HARDWARE),)
+
+ifeq ($(GPS_LOWI_ONLY_BUILD),true)
+PRODUCT_PACKAGES += libgps.utils
+endif
