@@ -30,7 +30,7 @@
 /*
 Changes from Qualcomm Innovation Center are provided under the following license:
 
-Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -822,6 +822,10 @@ DEFAULT_IMPL()
 void LocApiBase::
    getBestAvailableZppFix()
 DEFAULT_IMPL()
+
+bool LocApiBase::
+   getBestAvailableZppFixSync(LocGpsLocation &zppLoc, LocPosTechMask &tech_mask)
+DEFAULT_IMPL(false)
 
 LocationError LocApiBase::
     setGpsLockSync(GnssConfigGpsLock /*lock*/)

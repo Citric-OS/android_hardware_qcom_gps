@@ -527,6 +527,7 @@ void GnssAdapter::fillElapsedRealTime(const GpsLocationExtended& locationExtende
     if (!(out.location.flags & LOCATION_HAS_ELAPSED_REAL_TIME_BIT)) {
         out.location.elapsedRealTime = getBootTimeMilliSec() * 1000000;
         out.location.elapsedRealTimeUnc = mPositionElapsedRealTimeCal.getElapsedRealtimeUncNanos();
+        out.location.flags |= LOCATION_HAS_ELAPSED_REAL_TIME_BIT;
     }
 #endif //FEATURE_AUTOMOTIVE
 }
@@ -4254,13 +4255,6 @@ GnssAdapter::computeVRPBasedLla(const UlpLocation& loc, GpsLocationExtended& loc
     double lla[3];
 
     uint16_t locFlags = loc.gpsLocation.flags;
-    uint64_t locExtFlags = locExt.flags;
-
-    // check for SPE fix
-    if (!((locExtFlags & GPS_LOCATION_EXTENDED_HAS_OUTPUT_ENG_TYPE) &&
-          (locExt.locOutputEngType == LOC_OUTPUT_ENGINE_SPE))){
-        return;
-    }
 
     // we can only do translation if we have VRP based lever ARM info
     LeverArmTypeMask leverArmFlags = leverArmConfigInfo.leverArmValidMask;
@@ -4365,6 +4359,10 @@ GnssAdapter::reportPositionEvent(const UlpLocation& ulpLocation,
                     mAdapter.mGnssMbSvIdUsedInPosition = mLocationExtended.gnss_mb_sv_used_ids;
                 }
             }
+
+            // obtain the VRP based latitude/longitude/altitude for SPE fix
+            mAdapter.computeVRPBasedLla(mUlpLocation,
+                    mLocationExtended, mAdapter.mLocConfigInfo.leverArmConfigInfo);
 
             if (GPS_LOCATION_DESIRED_FLAGS ==
                     (mUlpLocation.gpsLocation.flags & (GPS_LOCATION_DESIRED_FLAGS)) &&
@@ -4862,10 +4860,6 @@ GnssAdapter::reportSpeAsEnginePosition(const UlpLocation& ulpLocation,
         engLocationInfo.locationExtended = locationExtended;
         engLocationInfo.sessionStatus = status;
 
-        // obtain the VRP based latitude/longitude/altitude for SPE fix
-        computeVRPBasedLla(engLocationInfo.location,
-                           engLocationInfo.locationExtended,
-                           mLocConfigInfo.leverArmConfigInfo);
         enginePositionReported = reportEnginePositions(1, &engLocationInfo);
     }
     return enginePositionReported;
