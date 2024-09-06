@@ -174,7 +174,7 @@ typedef enum {
     /**< Support FDCL */
     LOC_SUPPORTED_FEATURE_FDCL,
     /**< Support constellation enablement */
-    LOC_SUPPORTED_FEATURE_CONSTELLATION_ENABLEMENT_V02,
+    LOC_SUPPORTED_FEATURE_CONSTELLATION_ENABLEMENT_V02 = 5,
     /**< Support AGPM feature */
     LOC_SUPPORTED_FEATURE_AGPM_V02,
     /**< Support XTRA integrity */
@@ -184,7 +184,7 @@ typedef enum {
     /**< Support location privacy */
     LOC_SUPPORTED_FEATURE_LOCATION_PRIVACY,
     /**< Support NAVIC constellation */
-    LOC_SUPPORTED_FEATURE_NAVIC,
+    LOC_SUPPORTED_FEATURE_NAVIC = 10,
     /**< Support measurements correction */
     LOC_SUPPORTED_FEATURE_MEASUREMENTS_CORRECTION,
     /**<  Support Robust Location feature */
@@ -194,7 +194,7 @@ typedef enum {
     /**<  Support the multiband GNSS configuration feature   */
     LOC_SUPPORTED_FEATURE_MULTIBAND_CONFIG,
     /**<  Support the configuration for DSDA   */
-    LOC_SUPPORTED_FEATURE_DSDA_CONFIGURATION,
+    LOC_SUPPORTED_FEATURE_DSDA_CONFIGURATION = 15,
     /**<  Support the Multiple Attribution Apps(UTH clients Lock control) feature   */
     LOC_SUPPORTED_FEATURE_MULTIPLE_ATTRIBUTION_APPS,
     /**< Support the FLP, NLP Z-Source provider feature */
@@ -204,7 +204,9 @@ typedef enum {
     /**< Support the feature to report feature update in QMI_LOC_EVENT_REPORT_IND */
     LOC_SUPPORTED_FEATURE_DYNAMIC_FEATURE_STATUS,
     /**<  Support the feature to report Supported GNSS Bands */
-    LOC_SUPPORTED_FEATURE_GNSS_BANDS_SUPPORTED
+    LOC_SUPPORTED_FEATURE_GNSS_BANDS_SUPPORTED = 20,
+    /**<  Support the feature to disable constellation */
+    LOC_SUPPORTED_FEATURE_CONSTELLATION_DISABLEMENT,
 } loc_supported_feature_enum;
 
 typedef struct {
