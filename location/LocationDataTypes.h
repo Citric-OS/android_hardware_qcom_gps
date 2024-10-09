@@ -1958,6 +1958,10 @@ inline bool operator ==(GnssSvIdSource const& left, GnssSvIdSource const& right)
 struct GnssSvIdConfig {
     uint32_t size; // set to sizeof(GnssSvIdConfig)
 
+    // GPS - SV 1 maps to bit 0
+#define GNSS_SV_CONFIG_GPS_INITIAL_SV_ID 1
+    uint64_t gpsBlacklistSvMask;
+
     // GLONASS - SV 65 maps to bit 0
 #define GNSS_SV_CONFIG_GLO_INITIAL_SV_ID 65
     uint64_t gloBlacklistSvMask;
@@ -1987,6 +1991,7 @@ struct GnssSvIdConfig {
 
     inline bool equals(const GnssSvIdConfig& inConfig) {
         if ((inConfig.size == size) &&
+                (inConfig.gpsBlacklistSvMask == gpsBlacklistSvMask) &&
                 (inConfig.gloBlacklistSvMask == gloBlacklistSvMask) &&
                 (inConfig.bdsBlacklistSvMask == bdsBlacklistSvMask) &&
                 (inConfig.qzssBlacklistSvMask == qzssBlacklistSvMask) &&

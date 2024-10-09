@@ -1757,6 +1757,9 @@ GnssAdapter::combineBlacklistSvs(const GnssSvIdConfig& blacklistSvs,
 
     // Blacklist all SVs for each disabled constellation
     if (constellationConfig.blacklistedSvTypesMask) {
+        if (constellationConfig.blacklistedSvTypesMask & GNSS_SV_TYPES_MASK_GPS_BIT) {
+            combinedBlacklistSvs.gpsBlacklistSvMask = GNSS_SV_CONFIG_ALL_BITS_ENABLED_MASK;
+        }
         if (constellationConfig.blacklistedSvTypesMask & GNSS_SV_TYPES_MASK_GLO_BIT) {
             combinedBlacklistSvs.gloBlacklistSvMask = GNSS_SV_CONFIG_ALL_BITS_ENABLED_MASK;
         }
@@ -1773,39 +1776,12 @@ GnssAdapter::combineBlacklistSvs(const GnssSvIdConfig& blacklistSvs,
             combinedBlacklistSvs.navicBlacklistSvMask = GNSS_SV_CONFIG_ALL_BITS_ENABLED_MASK;
         }
     }
-    LOC_LOGv("combined blacklist bds 0x%" PRIx64 ", glo 0x%" PRIx64
+    LOC_LOGv("combined blacklist gps 0x%" PRIx64 ", bds 0x%" PRIx64 ", glo 0x%" PRIx64
             ", qzss 0x%" PRIx64 ", gal 0x%" PRIx64 ", sbas 0x%" PRIx64 ", navic 0x%" PRIx64,
-            combinedBlacklistSvs.bdsBlacklistSvMask, combinedBlacklistSvs.gloBlacklistSvMask,
-            combinedBlacklistSvs.qzssBlacklistSvMask, combinedBlacklistSvs.galBlacklistSvMask,
-            combinedBlacklistSvs.sbasBlacklistSvMask, combinedBlacklistSvs.navicBlacklistSvMask);
-
-}
-
-void
-GnssAdapter::gnssSvIdConfigUpdate(const std::vector<GnssSvIdSource>& blacklistedSvIds)
-{
-    // Clear the existing config
-    memset(&mGnssSvIdConfig, 0, sizeof(GnssSvIdConfig));
-
-    // Convert the sv id lists to masks
-    bool convertSuccess = convertToGnssSvIdConfig(blacklistedSvIds, mGnssSvIdConfig);
-
-    // Now send to Modem if conversion successful
-    if (convertSuccess) {
-        gnssSvIdConfigUpdate();
-    } else {
-        LOC_LOGe("convertToGnssSvIdConfig failed");
-    }
-}
-
-void
-GnssAdapter::gnssSvIdConfigUpdate()
-{
-    GnssSvIdConfig blacklistConfig = {};
-    GnssSvTypeConfig currentSvTypeConfig = gnssCombineSvTypeConfigs();
-    combineBlacklistSvs(mGnssSvIdConfig, currentSvTypeConfig, blacklistConfig);
-    // Now set required blacklisted SVs
-    mLocApi->setBlacklistSv(blacklistConfig);
+            combinedBlacklistSvs.gpsBlacklistSvMask, combinedBlacklistSvs.bdsBlacklistSvMask,
+            combinedBlacklistSvs.gloBlacklistSvMask, combinedBlacklistSvs.qzssBlacklistSvMask,
+            combinedBlacklistSvs.galBlacklistSvMask, combinedBlacklistSvs.sbasBlacklistSvMask,
+            combinedBlacklistSvs.navicBlacklistSvMask);
 }
 
 LocationError
@@ -1816,18 +1792,61 @@ GnssAdapter::gnssSvIdConfigUpdateSync(const std::vector<GnssSvIdSource>& blackli
 
     // Convert the sv id lists to masks
     convertToGnssSvIdConfig(blacklistedSvIds, mGnssSvIdConfig);
+
     // Now send to Modem
-    return gnssSvIdConfigUpdateSync();
+    return gnssSvConfigUpdate();
 }
 
+// This function will combine SV config command from Android and from XTRA daemon
+// as follows so the callflow would work for regardless whether modem support
+// constellation enablement or disablement
+//
+// step 1: obtain SV constellation enablement/disablement info via XTRA QCC path
+// step 2: combine SV constellation enablement/disablement info with info in step 1
+//   rule #1: if all SVs in a constellation are blacklisted, treat that constellation
+//            are disabled as well.
+//   rule #2: if a constellation is disabled, then mark all SVs in that constellation
+//            are blacklisted
+//   rule #3: if a constellation is both enabled and disabled, treat it as disabled
+// We do not cache the current config applied to QMI Loc api and compare with new incoming
+// config, as in case the command failed, cached current config may cause subsequent attempts to
+// set config to current config to always fail
 LocationError
-GnssAdapter::gnssSvIdConfigUpdateSync()
+GnssAdapter::gnssSvConfigUpdate()
 {
-    // Now set required blacklisted SVs
-    GnssSvIdConfig blacklistConfig = {};
-    GnssSvTypeConfig currentSvTypeConfig = gnssCombineSvTypeConfigs();
-    combineBlacklistSvs(mGnssSvIdConfig, currentSvTypeConfig, blacklistConfig);
-    return mLocApi->setBlacklistSvSync(blacklistConfig);
+    static GnssSvTypesMask currentSvTypeEnabled = 0;
+
+    GnssSvIdConfig newBlacklistConfig = {};
+    // combine sv constellation enablement/disablement from all sources (SDK and XTRA
+    GnssSvTypeConfig newSvTypeConfig = gnssCombineSvTypeConfigs();
+    // combine sv constellation enablement/disablement (newSvTypeConfig)
+    // with blacklist info (mGnssSvIdConfig) into newBlacklistConfig
+    combineBlacklistSvs(mGnssSvIdConfig, newSvTypeConfig, newBlacklistConfig);
+    mLocApi->setBlacklistSv(newBlacklistConfig);
+
+    if (newSvTypeConfig.size == 0) {
+        mLocApi->resetConstellationControl();
+    } else {
+       // if constellation disablement is not supported, and if constellation need to
+       // disabled, we will need to do reset, so that constellation can be disabled,
+       // otherwise, that constellation may only get blacklisted
+       bool disableSupported = ContextBase::isFeatureSupported(
+               LOC_SUPPORTED_FEATURE_CONSTELLATION_DISABLEMENT);
+       LOC_LOGd("disablement cap %d, current enabled constellation 0x%" PRIx64 ","
+                "new enabled constellation 0x%" PRIx64 "",
+                disableSupported, currentSvTypeEnabled, newSvTypeConfig.enabledSvTypesMask);
+        if (false == disableSupported) {
+            GnssSvTypesMask newSvTypeEnabled = newSvTypeConfig.enabledSvTypesMask;
+            if (currentSvTypeEnabled & (currentSvTypeEnabled ^ newSvTypeEnabled)) {
+                mLocApi->resetConstellationControl();
+            }
+        }
+        mLocApi->setConstellationControl(newSvTypeConfig);
+    }
+
+    currentSvTypeEnabled = newSvTypeConfig.enabledSvTypesMask;
+
+    return LOCATION_ERROR_SUCCESS;
 }
 
 void
@@ -2064,6 +2083,7 @@ GnssAdapter::convertToGnssSvIdConfig(
 
     // Empty vector => Clear any previous blacklisted SVs
     if (0 == blacklistedSvIds.size()) {
+        config.gpsBlacklistSvMask = 0;
         config.gloBlacklistSvMask = 0;
         config.bdsBlacklistSvMask = 0;
         config.qzssBlacklistSvMask = 0;
@@ -2078,6 +2098,10 @@ GnssAdapter::convertToGnssSvIdConfig(
             GnssSvId initialSvId = 0;
             uint16_t svIndexOffset = 0;
             switch (source.constellation) {
+            case GNSS_SV_TYPE_GPS:
+                svMaskPtr = &config.gpsBlacklistSvMask;
+                initialSvId = GNSS_SV_CONFIG_GPS_INITIAL_SV_ID;
+                break;
             case GNSS_SV_TYPE_GLONASS:
                 svMaskPtr = &config.gloBlacklistSvMask;
                 initialSvId = GNSS_SV_CONFIG_GLO_INITIAL_SV_ID;
@@ -2141,6 +2165,7 @@ GnssAdapter::convertToGnssSvIdConfig(
 
         // Return true if any one source is valid
         if (0 != config.gloBlacklistSvMask ||
+                0 != config.gpsBlacklistSvMask ||
                 0 != config.bdsBlacklistSvMask ||
                 0 != config.galBlacklistSvMask ||
                 0 != config.qzssBlacklistSvMask ||
@@ -2150,9 +2175,9 @@ GnssAdapter::convertToGnssSvIdConfig(
         }
     }
 
-    LOC_LOGd("blacklist bds 0x%" PRIx64 ", glo 0x%" PRIx64
+    LOC_LOGd("blacklist gps 0x%" PRIx64 ", bds 0x%" PRIx64 ", glo 0x%" PRIx64
             ", qzss 0x%" PRIx64 ", gal 0x%" PRIx64 ", sbas 0x%" PRIx64 ", navic 0x%" PRIx64,
-             config.bdsBlacklistSvMask, config.gloBlacklistSvMask,
+             config.gpsBlacklistSvMask, config.bdsBlacklistSvMask, config.gloBlacklistSvMask,
              config.qzssBlacklistSvMask, config.galBlacklistSvMask,
             config.sbasBlacklistSvMask, config.navicBlacklistSvMask);
 
@@ -2163,6 +2188,11 @@ void GnssAdapter::convertFromGnssSvIdConfig(
         const GnssSvIdConfig& svConfig, std::vector<GnssSvIdSource>& blacklistedSvIds)
 {
     // Convert blacklisted SV mask values to vectors
+    if (svConfig.gpsBlacklistSvMask) {
+        convertGnssSvIdMaskToList(
+                svConfig.gpsBlacklistSvMask, blacklistedSvIds,
+                GNSS_SV_CONFIG_GPS_INITIAL_SV_ID, GNSS_SV_TYPE_GPS);
+    }
     if (svConfig.bdsBlacklistSvMask) {
         convertGnssSvIdMaskToList(
                 svConfig.bdsBlacklistSvMask, blacklistedSvIds,
@@ -2278,8 +2308,9 @@ void GnssAdapter::reportGnssSvIdConfig(const GnssSvIdConfig& svIdConfig)
         if (config.blacklistedSvIds.size() > 0) {
             config.flags |= GNSS_CONFIG_FLAGS_BLACKLISTED_SV_IDS_BIT;
         }
-        LOC_LOGd("blacklist bds 0x%" PRIx64 ", glo 0x%" PRIx64 ", "
+        LOC_LOGd("blacklist gps 0x%" PRIx64 ", bds 0x%" PRIx64 ", glo 0x%" PRIx64 ", "
                  "qzss 0x%" PRIx64 ", gal 0x%" PRIx64 ", sbas 0x%" PRIx64 ", navic 0x%" PRIx64,
+                 svIdConfig.gpsBlacklistSvMask,
                  svIdConfig.bdsBlacklistSvMask, svIdConfig.gloBlacklistSvMask,
                  svIdConfig.qzssBlacklistSvMask, svIdConfig.galBlacklistSvMask,
                  svIdConfig.sbasBlacklistSvMask,  svIdConfig.navicBlacklistSvMask);
@@ -2319,102 +2350,14 @@ GnssAdapter::gnssUpdateSvTypeConfigCommand(const GnssSvTypeConfig& config,
                     LOC_SUPPORTED_FEATURE_CONSTELLATION_ENABLEMENT_V02)) {
                 LOC_LOGE("MsgGnssUpdateSvTypeConfig, CONSTELLATION_ENABLEMENT not supported.");
             } else {
-                GnssSvTypeConfig currentConfig = mAdapter->gnssCombineSvTypeConfigs();
                 if (mAdapter->gnssSetSvTypeConfig(mConfig, mSource)) {
-                    GnssSvTypeConfig newConfig = mAdapter->gnssCombineSvTypeConfigs();
-                    // Send update request to modem
-                    mAdapter->gnssSvTypeConfigUpdate(currentConfig, newConfig);
+                    mAdapter->gnssSvConfigUpdate();
                 }
             }
         }
     };
 
     sendMsg(new MsgGnssUpdateSvTypeConfig(this, mLocApi, config, source));
-}
-
-void
-GnssAdapter::gnssSvTypeConfigUpdate(const GnssSvTypeConfig& currentConfig,
-                                    const GnssSvTypeConfig& newConfig)
-{
-    LOC_LOGv("old constellations size %" PRIu32" blacklisted 0x%" PRIx64 ", enabled 0x%" PRIx64,
-             currentConfig.size, currentConfig.blacklistedSvTypesMask,
-             currentConfig.enabledSvTypesMask);
-
-    LOC_LOGv("new constellations size %" PRIu32" blacklisted 0x%" PRIx64 ", enabled 0x%" PRIx64,
-            newConfig.size, newConfig.blacklistedSvTypesMask,
-            newConfig.enabledSvTypesMask);
-
-    LOC_LOGv("blacklist bds 0x%" PRIx64 ", glo 0x%" PRIx64
-            ", qzss 0x%" PRIx64 ", gal 0x%" PRIx64 ", sbas 0x%" PRIx64 ", Navic 0x%" PRIx64,
-            mGnssSvIdConfig.bdsBlacklistSvMask, mGnssSvIdConfig.gloBlacklistSvMask,
-            mGnssSvIdConfig.qzssBlacklistSvMask, mGnssSvIdConfig.galBlacklistSvMask,
-            mGnssSvIdConfig.sbasBlacklistSvMask, mGnssSvIdConfig.navicBlacklistSvMask);
-
-    if (currentConfig.equals(newConfig)) {
-        LOC_LOGd("Same svTypeConfig, return");
-        return;
-    }
-
-    if (newConfig.size == 0) {
-        mLocApi->resetConstellationControl();
-        // blacklistedSvTypesMask is 0, no need to combine
-        mLocApi->setBlacklistSv(mGnssSvIdConfig);
-    } else if (newConfig.size == sizeof(newConfig)) {
-        // Gather bits removed from enabled mask
-        GnssSvTypesMask enabledRemoved = currentConfig.enabledSvTypesMask &
-                (currentConfig.enabledSvTypesMask ^ newConfig.enabledSvTypesMask);
-        // Send reset if any constellation is removed from the enabled list
-        if (enabledRemoved != 0) {
-            mLocApi->resetConstellationControl();
-        }
-
-        GnssSvIdConfig blacklistConfig = { };
-        // Add disabled constellation SVs
-        combineBlacklistSvs(mGnssSvIdConfig, newConfig, blacklistConfig);
-
-        // If enable a previously disabled constellation, should unblacklist all Svs for
-        // that constellation
-        GnssSvTypesMask reEnableSvTypesMask = currentConfig.blacklistedSvTypesMask &
-                newConfig.enabledSvTypesMask;
-        if (reEnableSvTypesMask) {
-            if (reEnableSvTypesMask & GNSS_SV_TYPES_MASK_GLO_BIT) {
-                blacklistConfig.gloBlacklistSvMask = 0;
-            }
-            if (reEnableSvTypesMask & GNSS_SV_TYPES_MASK_BDS_BIT) {
-                blacklistConfig.bdsBlacklistSvMask = 0;
-            }
-            if (reEnableSvTypesMask & GNSS_SV_TYPES_MASK_QZSS_BIT) {
-                blacklistConfig.qzssBlacklistSvMask = 0;
-            }
-            if (reEnableSvTypesMask & GNSS_SV_TYPES_MASK_GAL_BIT) {
-                blacklistConfig.galBlacklistSvMask = 0;
-            }
-            if (reEnableSvTypesMask & GNSS_SV_TYPES_MASK_NAVIC_BIT) {
-                blacklistConfig.navicBlacklistSvMask = 0;
-            }
-        }
-
-        // Send blacklist info
-        mLocApi->setBlacklistSv(blacklistConfig);
-
-        // Send only enabled constellation config
-        if (newConfig.enabledSvTypesMask &&
-                newConfig.enabledSvTypesMask != currentConfig.enabledSvTypesMask) {
-            GnssSvTypeConfig svTypeConfig = {sizeof(GnssSvTypeConfig), 0, 0};
-            svTypeConfig.enabledSvTypesMask = newConfig.enabledSvTypesMask;
-            mLocApi->setConstellationControl(svTypeConfig);
-        }
-    }
-}
-
-void
-GnssAdapter::gnssSvTypeConfigUpdate() {
-    // for modem SSR, blacklist SVs recovery is taken care by gnssSvIdConfigUpdate
-    // size 0 == default NV constellation, size == there is a new constellation config
-    GnssSvTypeConfig currentConfig = gnssCombineSvTypeConfigs();
-    if (currentConfig.size) {
-        mLocApi->setConstellationControl(currentConfig);
-    }
 }
 
 bool
@@ -2438,28 +2381,60 @@ GnssAdapter::gnssCombineSvTypeConfigs() {
     // bit OR enableMask, disableMask from different SW API clients
     for (int i = 0; i < SV_TYPE_CONFIG_MAX_SOURCE; i++) {
         if (mGnssSvTypeConfigs[i].isValid) {
-            // if client set size == 0, means reset constellation
-            // size non zero shall overwrite zero
-            if (mGnssSvTypeConfigs[i].gnssSvTypeConfig.size) {
-                svTypeConfig.size = mGnssSvTypeConfigs[i].gnssSvTypeConfig.size;
-            }
             svTypeConfig.enabledSvTypesMask |=
                 mGnssSvTypeConfigs[i].gnssSvTypeConfig.enabledSvTypesMask;
             svTypeConfig.blacklistedSvTypesMask |=
                 mGnssSvTypeConfigs[i].gnssSvTypeConfig.blacklistedSvTypesMask;
+
+            LOC_LOGd("sv type config source %d, enableMask 0x%" PRIx64 " disableMask 0x%" PRIx64,
+                    i, svTypeConfig.enabledSvTypesMask, svTypeConfig.blacklistedSvTypesMask);
         }
     }
 
-    // if a constellation is being enabled and disabled at the same time,
-    // honor disable mask, set enable mask to 0
-    GnssSvTypesMask conflictMask = svTypeConfig.enabledSvTypesMask &
-        svTypeConfig.blacklistedSvTypesMask;
-    if (conflictMask) {
-        svTypeConfig.enabledSvTypesMask &= ~conflictMask;
+    for (GnssSvIdSource svIdSource : mBlacklistedSvIds) {
+       if (svIdSource.svId == 0) {
+          LOC_LOGd("in blacklist sv list, svId is set to 0 for constellation of %d",
+                   svIdSource.constellation);
+          switch (svIdSource.constellation) {
+          // Note: SBAS constellation need special handling
+          // If GPS is disabled, then SBAS will be disabled.
+          // If GPS is not disabled, then SBAS can not be disabled, but can be blacklisted
+          case GNSS_SV_TYPE_GPS:
+             svTypeConfig.blacklistedSvTypesMask |= GNSS_SV_TYPES_MASK_GPS_BIT;
+             break;
+          case GNSS_SV_TYPE_GLONASS:
+             svTypeConfig.blacklistedSvTypesMask |= GNSS_SV_TYPES_MASK_GLO_BIT;
+             break;
+          case GNSS_SV_TYPE_QZSS:
+             svTypeConfig.blacklistedSvTypesMask |= GNSS_SV_TYPES_MASK_QZSS_BIT;
+             break;
+          case GNSS_SV_TYPE_BEIDOU:
+             svTypeConfig.blacklistedSvTypesMask |= GNSS_SV_TYPES_MASK_BDS_BIT;
+             break;
+          case GNSS_SV_TYPE_GALILEO:
+             svTypeConfig.blacklistedSvTypesMask |= GNSS_SV_TYPES_MASK_GAL_BIT;
+             break;
+          case GNSS_SV_TYPE_NAVIC:
+             svTypeConfig.blacklistedSvTypesMask |= GNSS_SV_TYPES_MASK_NAVIC_BIT;
+             break;
+          default:
+              break;
+          }
+       }
     }
 
-    LOC_LOGd("Combined svTypeConfig enableMask 0x%" PRIx64 " disableMask 0x%" PRIx64,
-            svTypeConfig.enabledSvTypesMask, svTypeConfig.blacklistedSvTypesMask);
+    // if client set size == 0, means reset constellation
+    // size non zero shall overwrite zero
+    if (svTypeConfig.enabledSvTypesMask || svTypeConfig.blacklistedSvTypesMask) {
+       svTypeConfig.size = sizeof(svTypeConfig);
+       // enabled mask is the opporsite of disabled mask
+       svTypeConfig.enabledSvTypesMask = (~svTypeConfig.blacklistedSvTypesMask) &
+                                          GNSS_SV_TYPES_MASK_ALL;
+    }
+
+    LOC_LOGd("Combined svTypeConfig size %d, enableMask 0x%" PRIx64 " disableMask 0x%" PRIx64,
+             svTypeConfig.size, svTypeConfig.enabledSvTypesMask,
+             svTypeConfig.blacklistedSvTypesMask);
 
     return svTypeConfig;
 }
@@ -2520,11 +2495,9 @@ GnssAdapter::gnssResetSvTypeConfigCommand()
                     LOC_SUPPORTED_FEATURE_CONSTELLATION_ENABLEMENT_V02)) {
                 LOC_LOGE("MsgGnssResetSvTypeConfig, CONSTELLATION_ENABLEMENT not supported.");
             } else {
-                GnssSvTypeConfig currentConfig = mAdapter->gnssCombineSvTypeConfigs();
                 // only being called by LocSDK, the default main client
                 if (mAdapter->gnssSetSvTypeConfig({0, 0, 0}, SV_TYPE_CONFIG_FROM_API)) {
-                    GnssSvTypeConfig newConfig = mAdapter->gnssCombineSvTypeConfigs();
-                    mAdapter->gnssSvTypeConfigUpdate(currentConfig, newConfig);
+                    mAdapter->gnssSvConfigUpdate();
                 }
             }
         }
@@ -3188,8 +3161,7 @@ GnssAdapter::handleEngineUpEvent()
             // must be called only after capabilities are known
             mAdapter.setConfig();
             mAdapter.setTribandState();
-            mAdapter.gnssSvIdConfigUpdate();
-            mAdapter.gnssSvTypeConfigUpdate();
+            mAdapter.gnssSvConfigUpdate();
             mAdapter.updateSystemPowerState(mAdapter.getSystemPowerState());
             if (mAdapter.mPowerConnectState != POWER_CONNECT_UNKNOWN) {
                 mAdapter.mLocApi->updatePowerConnectState(
