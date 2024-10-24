@@ -93,6 +93,13 @@ static void convertGnssSvStatus(const GnssSvNotification& in,
 static void convertGnssSvStatus(const GnssSvNotification& in,
         hidl_vec<V2_1::IGnssCallback::GnssSvInfo>& out);
 
+// if ANDROID_REPORT_SPE_ONLY is not set in the izat.conf,
+// the default behavior is "report SPE PVT to Android GNSS API"
+static uint32_t sReportSpeOnly = 1;
+static loc_param_s_type izatConfParamTable[] = {
+    {"ANDROID_REPORT_SPE_ONLY", &sReportSpeOnly, nullptr, 'n'},
+};
+
 GnssAPIClient::GnssAPIClient(const sp<V1_0::IGnssCallback>& gpsCb,
         const sp<V1_0::IGnssNiCallback>& niCb) :
     LocationAPIClientBase(),
@@ -172,11 +179,30 @@ void GnssAPIClient::setCallbacks()
         readConfig = true;
     }
 
-    locationCallbacks.engineLocationsInfoCb = nullptr;
-    locationCallbacks.engineLocationsInfoCb = [this](uint32_t count,
-            GnssLocationInfoNotification* engineLocationInfoNotification) {
-        onEngineLocationsInfoCb(count, engineLocationInfoNotification);
-    };
+    /*-------------------|-------------    PVT received --------------------|
+     | Technology used   | By trackingCb     | By engineLocationInfoCallback|
+     |-------------------|-------------------|------------------------------|
+     |Modem PE only      | SPE               | SPE                          |
+     |-------------------|-------------------|----------------------------  |
+     |Modem + HLOS Boeing| Aggregated        | SPE and Aggregated           |
+     |----------------------------------------------------------------------|
+     * By default always register with engineLocationsInfoCb, drop
+     * aggreated PVTs(if received), so this call back only report SPE no
+     * matter what the techonolgy is used;
+     * When config is set to 0, register with trackingCb, this is the call back
+     * which will report aggregated PVT to Android GNSS API*/
+    if (0 == sReportSpeOnly) {
+        locationCallbacks.trackingCb = nullptr;
+        locationCallbacks.trackingCb = [this](const Location& location) {
+            onTrackingCb(location);
+        };
+    } else {
+        locationCallbacks.engineLocationsInfoCb = nullptr;
+        locationCallbacks.engineLocationsInfoCb = [this](uint32_t count,
+                GnssLocationInfoNotification* engineLocationInfoNotification) {
+            onEngineLocationsInfoCb(count, engineLocationInfoNotification);
+        };
+    }
 
     locationCallbacks.batchingCb = nullptr;
     locationCallbacks.geofenceBreachCb = nullptr;
@@ -201,7 +227,7 @@ void GnssAPIClient::setCallbacks()
     };
 
     locationCallbacks.gnssNmeaCb = nullptr;
-    locationCallbacks.gnssNmeaCb = [this](const GnssNmeaNotification& gnssNmeaNotification) {
+    locationCallbacks.gnssNmeaCb = [this](GnssNmeaNotification gnssNmeaNotification) {
         onGnssNmeaCb(gnssNmeaNotification);
     };
 
@@ -315,6 +341,9 @@ bool GnssAPIClient::gnssSetPositionMode(IGnss::GnssPositionMode mode,
     mTrackingOptions.tbm = timeBetweenMeasurement;
 
     mTrackingOptions.locReqEngTypeMask = LOC_REQ_ENGINE_SPE_BIT;
+    if (0 == sReportSpeOnly) {
+        mTrackingOptions.locReqEngTypeMask = LOC_REQ_ENGINE_FUSED_BIT;
+    }
     locAPIUpdateTrackingOptions(mTrackingOptions);
     return retVal;
 }
@@ -680,7 +709,7 @@ void GnssAPIClient::onGnssSvCb(const GnssSvNotification& gnssSvNotification)
     }
 }
 
-void GnssAPIClient::onGnssNmeaCb(const GnssNmeaNotification& gnssNmeaNotification)
+void GnssAPIClient::onGnssNmeaCb(GnssNmeaNotification gnssNmeaNotification)
 {
     mMutex.lock();
     auto gnssCbIface(mGnssCbIface);

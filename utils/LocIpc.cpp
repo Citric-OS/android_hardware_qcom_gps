@@ -30,7 +30,7 @@
 /*
 Changes from Qualcomm Innovation Center are provided under the following license:
 
-Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -107,8 +107,7 @@ Sock::Sock(int sid, const uint32_t maxTxSize) :
         srand48(time(NULL));
         sRandSeeded = true;
     }
-    memset(LOC_IPC_HEAD, 0, sizeof(LOC_IPC_HEAD));
-    snprintf(LOC_IPC_HEAD, sizeof(LOC_IPC_HEAD), "$MSG_CONCAT_HDR$%16.16lX$", lrand48());
+    snprintf(LOC_IPC_HEAD, sizeof(LOC_IPC_HEAD), "$MSG_CONCAT_HDR$%16.16lX$$%8.8X$", lrand48(), 0);
 }
 
 ssize_t Sock::send(const void *buf, uint32_t len, int flags, const struct sockaddr *destAddr,
@@ -146,12 +145,8 @@ ssize_t Sock::sendto(const void *buf, size_t len, int flags, const struct sockad
                 memcpy(tempBuf+sizeof(LOC_IPC_HEAD), (char*)buf + offset, thisLen);
                 rtv = ::sendto(mSid, tempBuf, thisLen + sizeof(LOC_IPC_HEAD), flags, destAddr,
                                addrlen);
-                if (rtv == -1 || rtv <= sizeof(LOC_IPC_HEAD)) {
-                    LOC_LOGw("sendto failed, return %zu, reason: %s", rtv, strerror(errno));
-                    break;
-                }
             }
-            rtv = (rtv > sizeof(LOC_IPC_HEAD)) ? (len) : -1;
+            rtv = (rtv > 0) ? (len) : -1;
             delete[] tempBuf;
         }
     }

@@ -30,7 +30,7 @@
 /*
 Changes from Qualcomm Innovation Center are provided under the following license:
 
-Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022, 2023 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -192,10 +192,7 @@ public:
         return mLBSProxy->getIzatDevId();
     }
     inline void sendMsg(const LocMsg *msg) { getMsgTask()->sendMsg(msg); }
-    inline bool checkFeatureStatus(int* fids,
-            LocFeatureStatus* status, uint32_t idCount, bool directQwesCall = false) const {
-        return mLocApiProxy->checkFeatureStatus(fids, status, idCount, directQwesCall);
-    }
+
     static loc_gps_cfg_s_type mGps_conf;
     static loc_sap_cfg_s_type mSap_conf;
     static bool sIsEngineCapabilitiesKnown;
@@ -330,34 +327,6 @@ public:
                        sQwesFeatureMask |= LOCATION_CAPABILITIES_QWES_WIFI_RTT_POSITIONING;
                    } else {
                        sQwesFeatureMask &= ~LOCATION_CAPABILITIES_QWES_WIFI_RTT_POSITIONING;
-                   }
-               break;
-               case LOCATION_QWES_FEATURE_NLOS_ML20:
-                   if (itr->second) {
-                       sQwesFeatureMask |= LOCATION_CAPABILITIES_NLOS_ML20;
-                   } else {
-                       sQwesFeatureMask &= ~LOCATION_CAPABILITIES_NLOS_ML20;
-                   }
-                   break;
-               case LOCATION_QWES_FEATURE_TYPE_WWAN_STANDARD_POSITIONING:
-                   if (itr->second) {
-                       sQwesFeatureMask |= LOCATION_CAPABILITIES_QWES_WWAN_STANDARD_POSITIONING;
-                   } else {
-                       sQwesFeatureMask &= ~LOCATION_CAPABILITIES_QWES_WWAN_STANDARD_POSITIONING;
-                   }
-               break;
-               case LOCATION_QWES_FEATURE_TYPE_WWAN_PREMIUM_POSITIONING:
-                   if (itr->second) {
-                       sQwesFeatureMask |= LOCATION_CAPABILITIES_QWES_WWAN_PREMIUM_POSITIONING;
-                   } else {
-                       sQwesFeatureMask &= ~LOCATION_CAPABILITIES_QWES_WWAN_PREMIUM_POSITIONING;
-                   }
-               break;
-               case LOCATION_QWES_FEATURE_STATUS_GNSS_NHZ:
-                   if (itr->second) {
-                       sQwesFeatureMask |= LOCATION_CAPABILITIES_QWES_GNSS_NHZ;
-                   } else {
-                       sQwesFeatureMask &= ~LOCATION_CAPABILITIES_QWES_GNSS_NHZ;
                    }
                break;
            }

@@ -118,7 +118,7 @@ LocationAPIControlClient::~LocationAPIControlClient()
     pthread_mutex_destroy(&mMutex);
 }
 
-uint32_t LocationAPIControlClient::locAPIGnssDeleteAidingData(const GnssAidingData& data)
+uint32_t LocationAPIControlClient::locAPIGnssDeleteAidingData(GnssAidingData& data)
 {
     uint32_t retVal = LOCATION_ERROR_GENERAL_FAILURE;
     pthread_mutex_lock(&mMutex);
@@ -174,7 +174,7 @@ void LocationAPIControlClient::locAPIDisable()
     pthread_mutex_unlock(&mMutex);
 }
 
-uint32_t LocationAPIControlClient::locAPIGnssUpdateConfig(const GnssConfig& config)
+uint32_t LocationAPIControlClient::locAPIGnssUpdateConfig(GnssConfig config)
 {
     uint32_t retVal = LOCATION_ERROR_GENERAL_FAILURE;
 
@@ -338,8 +338,7 @@ void LocationAPIClientBase::locAPISetCallbacks(LocationCallbacks& locationCallba
     if (locationCallbacks.batchingStatusCb != nullptr) {
         mBatchingStatusCallback = locationCallbacks.batchingStatusCb;
         locationCallbacks.batchingStatusCb =
-                [this](const BatchingStatusInfo& batchStatus,
-                const std::list<uint32_t> & tripCompletedList) {
+            [this](BatchingStatusInfo batchStatus, std::list<uint32_t> & tripCompletedList) {
             beforeBatchingStatusCb(batchStatus, tripCompletedList);
         };
     }
@@ -407,7 +406,7 @@ void LocationAPIClientBase::onLocationApiDestroyCompleteCb()
     delete this;
 }
 
-uint32_t LocationAPIClientBase::locAPIStartTracking(const TrackingOptions& options)
+uint32_t LocationAPIClientBase::locAPIStartTracking(TrackingOptions& options)
 {
     uint32_t retVal = LOCATION_ERROR_GENERAL_FAILURE;
     pthread_mutex_lock(&mMutex);
@@ -452,7 +451,7 @@ void LocationAPIClientBase::locAPIStopTracking()
     pthread_mutex_unlock(&mMutex);
 }
 
-void LocationAPIClientBase::locAPIUpdateTrackingOptions(const TrackingOptions& options)
+void LocationAPIClientBase::locAPIUpdateTrackingOptions(TrackingOptions& options)
 {
     pthread_mutex_lock(&mMutex);
     if (mLocationAPI) {
@@ -578,13 +577,6 @@ uint32_t LocationAPIClientBase::locAPIStopSession(uint32_t id)
     }
     pthread_mutex_unlock(&mMutex);
     return retVal;
-}
-
-void LocationAPIClientBase::locAPIRemoveAllSessions() {
-    std::vector<uint32_t> idsVec = mSessionBiDict.getAllIds();
-    for (int i=0; i<idsVec.size(); ++i) {
-        locAPIStopSession(idsVec[i]);
-    }
 }
 
 uint32_t LocationAPIClientBase::locAPIUpdateSessionOptions(
@@ -923,7 +915,7 @@ uint32_t LocationAPIClientBase::locAPIGetAntennaInfo(AntennaInfoCallback* cb) {
 }
 
 void LocationAPIClientBase::beforeGeofenceBreachCb(
-        const GeofenceBreachNotification& geofenceBreachNotification)
+        GeofenceBreachNotification geofenceBreachNotification)
 {
     uint32_t* ids = (uint32_t*)malloc(sizeof(uint32_t) * geofenceBreachNotification.count);
     size_t n = geofenceBreachNotification.count;
@@ -935,7 +927,7 @@ void LocationAPIClientBase::beforeGeofenceBreachCb(
                 sizeof(uint32_t) * geofenceBreachNotification.count);
         return;
     }
-    GeofenceBreachNotification notif = geofenceBreachNotification;
+
     pthread_mutex_lock(&mMutex);
     if (mGeofenceBreachCallback != nullptr) {
         size_t count = 0;
@@ -954,22 +946,22 @@ void LocationAPIClientBase::beforeGeofenceBreachCb(
                 count++;
             }
         }
-        notif.count = count;
-        notif.ids = ids;
+        geofenceBreachNotification.count = count;
+        geofenceBreachNotification.ids = ids;
 
         genfenceCallback = mGeofenceBreachCallback;
     }
     pthread_mutex_unlock(&mMutex);
 
     if (genfenceCallback != nullptr) {
-        genfenceCallback(notif);
+        genfenceCallback(geofenceBreachNotification);
     }
 
     free(ids);
 }
 
-void LocationAPIClientBase::beforeBatchingStatusCb(const BatchingStatusInfo& batchStatus,
-        const std::list<uint32_t> & tripCompletedList) {
+void LocationAPIClientBase::beforeBatchingStatusCb(BatchingStatusInfo batchStatus,
+        std::list<uint32_t> & tripCompletedList) {
 
     // map the trip ids to the client ids
     std::list<uint32_t> tripCompletedClientIdList;

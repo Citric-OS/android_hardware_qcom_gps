@@ -396,7 +396,7 @@ BatchingAdapter::autoReportBatchingSessionsCount()
 
 uint32_t
 BatchingAdapter::startBatchingCommand(
-        LocationAPI* client, const BatchingOptions& batchOptions)
+        LocationAPI* client, BatchingOptions& batchOptions)
 {
     uint32_t sessionId = generateSessionId();
     LOC_LOGD("%s]: client %p id %u minInterval %u minDistance %u mode %u Batching Mode %d",
@@ -413,7 +413,7 @@ BatchingAdapter::startBatchingCommand(
                                LocApiBase& api,
                                LocationAPI* client,
                                uint32_t sessionId,
-                               const BatchingOptions& batchOptions) :
+                               BatchingOptions batchOptions) :
             LocMsg(),
             mAdapter(adapter),
             mApi(api),
@@ -490,7 +490,7 @@ BatchingAdapter::startBatching(LocationAPI* client, uint32_t sessionId,
 
 void
 BatchingAdapter::updateBatchingOptionsCommand(LocationAPI* client, uint32_t id,
-        const BatchingOptions& batchOptions)
+        BatchingOptions& batchOptions)
 {
     LOC_LOGD("%s]: client %p id %u minInterval %u minDistance %u mode %u batchMode %u",
              __func__, client, id, batchOptions.minInterval,
@@ -507,7 +507,7 @@ BatchingAdapter::updateBatchingOptionsCommand(LocationAPI* client, uint32_t id,
                                 LocApiBase& api,
                                 LocationAPI* client,
                                 uint32_t sessionId,
-                                const BatchingOptions& batchOptions) :
+                                BatchingOptions batchOptions) :
             LocMsg(),
             mAdapter(adapter),
             mApi(api),

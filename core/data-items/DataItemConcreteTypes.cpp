@@ -30,7 +30,7 @@
 /*
 Changes from Qualcomm Innovation Center are provided under the following license:
 
-Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -62,8 +62,6 @@ IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-
-#define LOG_TAG "DataItemConcreteTypes"
 
 #include "DataItemConcreteTypes.h"
 #include <inttypes.h>
@@ -971,5 +969,4 @@ int32_t NlpSessionStartedDataItem::copyFrom(IDataItemCore* src) {
     EXIT_LOG("%d", result);
     return result;
 }
-
 } //namespace loc_core

@@ -30,7 +30,7 @@
  /*
  Changes from Qualcomm Innovation Center are provided under the following license:
 
- Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ Copyright (c) 2022, 2023 Qualcomm Innovation Center, Inc. All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted (subject to the limitations in the
@@ -107,12 +107,14 @@ class LocAdapterBase;
 struct LocSsrMsg;
 struct LocOpenMsg;
 
-typedef struct {
+typedef struct
+{
     uint32_t accumulatedDistance;
     uint32_t numOfBatchedPositions;
 } LocApiBatchData;
 
-typedef struct {
+typedef struct
+{
     uint32_t hwId;
 } LocApiGeofenceData;
 
@@ -138,8 +140,6 @@ public:
             GnssSvMeasurementHeader& svMeasSetHeader,
             GnssMeasurementsData& measurementData) { return false; }
     inline virtual float getGeoidalSeparation(double latitude, double longitude) { return 0.0; }
-    inline virtual bool checkFeatureStatus(int* fids, LocFeatureStatus* status,
-            uint32_t idCount, bool directQwesCall = false) {return false;}
 };
 
 class LocApiBase {
@@ -183,9 +183,6 @@ public:
         if (nullptr != mMsgTask) {
             mMsgTask->sendMsg(msg);
         }
-    }
-    inline MsgTask* getMsgTask() const {
-        return mMsgTask;
     }
     inline void destroy() {
         close();
@@ -312,8 +309,6 @@ public:
 
     virtual void getWwanZppFix();
     virtual void getBestAvailableZppFix();
-    virtual bool getBestAvailableZppFixSync(LocGpsLocation &zppLoc,
-            LocPosTechMask &tech_mask);
     virtual LocationError setGpsLockSync(GnssConfigGpsLock lock);
     virtual void requestForAidingData(GnssAidingDataSvMask svDataMask);
     virtual LocationError setXtraVersionCheckSync(uint32_t check);
@@ -383,8 +378,7 @@ public:
     virtual void updatePowerConnectState(bool connected);
 
     virtual void configRobustLocation(bool enable, bool enableForE911,
-                                      LocApiResponse* adapterResponse = nullptr,
-                                      bool enableForE911Valid = false);
+                                      LocApiResponse* adapterResponse=nullptr);
     virtual void getRobustLocationConfig(uint32_t sessionId, LocApiResponse* adapterResponse);
     virtual void configMinGpsWeek(uint16_t minGpsWeek,
                                   LocApiResponse* adapterResponse=nullptr);
@@ -409,13 +403,13 @@ public:
     virtual void setTribandState(bool enabled);
 
     virtual void configPrecisePositioning(uint32_t featureId, bool enable,
-            const std::string& appHash, LocApiResponse* adapterResponse=nullptr);
+            std::string appHash, LocApiResponse* adapterResponse=nullptr);
     virtual void configMerkleTree(mgpOsnmaPublicKeyAndMerkleTreeStruct* merkleTree,
             LocApiResponse* adapterResponse=nullptr);
     virtual void configOsnmaEnablement(bool enable, LocApiResponse* adapterResponse=nullptr);
 };
 
-class RealtimeEstimator {
+class ElapsedRealtimeEstimator {
     typedef struct {
         GPSTimeStruct gpsTime;
         int64_t qtimerTick;
@@ -436,7 +430,7 @@ private:
     GpsTimeQtimerTickPair mTimePairMeasReport;
 
 public:
-    inline RealtimeEstimator(int64_t travelTimeNanosEstimate) :
+    inline ElapsedRealtimeEstimator(int64_t travelTimeNanosEstimate) :
             mInitialTravelTime(travelTimeNanosEstimate) {
         reset();
     }
@@ -445,9 +439,8 @@ public:
     inline int64_t getElapsedRealtimeUncNanos() { return 5000000;}
     void reset();
     static int64_t getElapsedRealtimeQtimer(int64_t qtimerTicksAtOrigin);
-    bool fillAdditionalTimestamps(const GpsLocationExtended& locationExtended,
-                                      int64_t &elapsedTime, float & elpasedTimeUnc,
-                                      uint64_t &gptpTime, bool &gPTPValidity);
+    bool getElapsedRealtimeForGpsTime(const GpsLocationExtended& locationExtended,
+                                      int64_t &elapsedTime, float & elpasedTimeUnc);
     void saveGpsTimeAndQtimerPairInPvtReport(const GpsLocationExtended& locationExtended);
     void saveGpsTimeAndQtimerPairInMeasReport(const GnssSvMeasurementSet& svMeasurementSet);
     static bool getCurrentTime(struct timespec& currentTime, int64_t& sinceBootTimeNanos);

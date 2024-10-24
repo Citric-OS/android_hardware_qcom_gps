@@ -2,7 +2,6 @@
 cc_library_shared {
 
     name: "libloc_core",
-    defaults: ["qtilocation_common_defaults"],
     vendor: true,
 
 

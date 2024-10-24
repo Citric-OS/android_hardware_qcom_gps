@@ -1945,7 +1945,7 @@ bool SystemStatus::setDefaultGnssEngineStates(void)
 ******************************************************************************/
 bool SystemStatus::eventConnectionStatus(bool connected, int8_t type,
                                          bool roaming, NetworkHandle networkHandle,
-                                         const string& apn)
+                                         string& apn)
 {
     // send networkinof dataitem to systemstatus observer clients
     SystemStatusNetworkInfo s(type, "", "", connected, roaming,
@@ -2056,6 +2056,20 @@ bool SystemStatus::eventSetTracking(bool tracking, bool updateSysStatusTrkState)
 }
 
 /******************************************************************************
+@brief      API to update gps enable state
+
+@param[In]  enable state
+
+@return     true when successfully done
+******************************************************************************/
+
+bool SystemStatus::eventGpsEnabled(bool gpsEnabled) {
+    SystemStatusGpsState  s(gpsEnabled);
+    mSysStatusObsvr.notify({&s.mDataItem});
+    return true;
+}
+
+/******************************************************************************
 @brief      API to update Location feature QWES status
 
 @param[In]  Location feature QWES status
@@ -2079,20 +2093,5 @@ bool SystemStatus::eventNlpSessionStatus(bool nlpStarted) {
     mSysStatusObsvr.notify({&s.mDataItem});
     return true;
 }
-
-/******************************************************************************
-@brief      API to update gps enable state
-
-@param[In]  enable state
-
-@return     true when successfully done
-******************************************************************************/
-
-bool SystemStatus::eventGpsEnabled(bool gpsEnabled) {
-    SystemStatusGpsState  s(gpsEnabled);
-    mSysStatusObsvr.notify({&s.mDataItem});
-    return true;
-}
-
 } // namespace loc_core
 

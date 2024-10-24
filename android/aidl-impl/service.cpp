@@ -53,7 +53,6 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <unistd.h>
 #include <aidl/android/hardware/gnss/IGnss.h>
 #include <hidl/LegacySupport.h>
 #include "loc_cfg.h"
@@ -63,10 +62,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Gnss.h"
 #include <pthread.h>
 #include <log_util.h>
-#if defined __LIBFUZZON__
-#include <signal.h>
-#include <stdio.h>
-#endif
 
 extern "C" {
 #include "vndfwk-detect.h"
@@ -90,51 +85,6 @@ typedef void createQesdkHandle();
 
 using GnssAidl = ::android::hardware::gnss::aidl::implementation::Gnss;
 
-#if defined __LIBFUZZON__
-extern "C" void __gcov_dump(void);
-
-void gcovHandler(int signal) {
-    ALOGW("gcovHandler is called.\n");
-    char *s1 = getenv("GCOV_PREFIX");
-    if (s1 != NULL) {
-        ALOGW("GCOV_PREFIX is %s", s1);
-    }
-    char *s2 = getenv("GCOV_PREFIX_STRIP");
-    if (s2 != NULL) {
-        ALOGW("GCOV_PREFIX_STRIP is %s", s2);
-    }
-
-    ALOGW("__gcov_dump prepare.\n");
-    __gcov_dump();
-    ALOGW("__gcov_dump has been called.\n");
-}
-
-void setGcovHandler() {
-    ALOGI("start setting gcov handler for GNSS AIDL.");
-    struct sigaction act;
-    memset(&act, 0, sizeof(act));
-    act.sa_handler = gcovHandler;
-    sigaction(SIGTERM, &act, 0);
-    sigaction(SIGKILL, &act, 0);
-    sigaction(SIGSEGV, &act, 0);
-    sigaction(SIGINT, &act, 0);
-    sigaction(SIGILL, &act, 0);
-    sigaction(SIGABRT, &act, 0);
-    sigaction(SIGFPE, &act, 0);
-    ALOGI("finish setting gcov handler for GNSS AIDL.");
-}
-#endif
-
-static void sleepIfInShutdown() {
-    char shutdownProp[PROPERTY_VALUE_MAX] = {};
-    const char propName[] = "sys.shutdown.requested";
-    const char propDefault[] = "N/A";
-    property_get(propName, shutdownProp, propDefault);
-    if (strncmp(shutdownProp, propDefault, sizeof(propDefault)-1) != 0) {
-        ALOGW("%s, %s was set %s, SLEEP!!!", __FUNCTION__, propName, shutdownProp);
-        sleep(UINT_MAX);
-    }
-}
 
 #define GNSS_AUTO_POWER_LIBNAME  "libgnssauto_power.so"
 #define GNSS_WEAR_POWER_LIBNAME  "libgnsswear_power.so"
@@ -179,10 +129,6 @@ void initializeGnssPowerHandler() {
 }
 
 int main() {
-    sleepIfInShutdown();
-#if defined __LIBFUZZON__
-    setGcovHandler();
-#endif
     ABinderProcess_setThreadPoolMaxThreadCount(1);
     ABinderProcess_startThreadPool();
     ALOGI("%s, start Gnss HAL process", __FUNCTION__);

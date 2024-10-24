@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2022, 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -44,6 +44,7 @@ namespace measurement_corrections {
 namespace aidl {
 namespace implementation {
 using ::aidl::android::hardware::gnss::GnssConstellationType;
+static MeasurementCorrectionsInterface* spMeasurementCorrections = nullptr;
 
 void measurementCorrectionsInterfaceDied(void* cookie) {
     LOC_LOGe("IGnssAntennaInfo AIDL service died");
@@ -55,9 +56,18 @@ void measurementCorrectionsInterfaceDied(void* cookie) {
 }
 MeasurementCorrectionsInterface::MeasurementCorrectionsInterface(Gnss* gnss) : mGnss(gnss),
     mDeathRecipient(AIBinder_DeathRecipient_new(&measurementCorrectionsInterfaceDied)) {
+    spMeasurementCorrections = this;
 }
 
 MeasurementCorrectionsInterface::~MeasurementCorrectionsInterface() {
+    spMeasurementCorrections = nullptr;
+}
+
+void MeasurementCorrectionsInterface::measCorrSetCapabilitiesCb(
+        GnssMeasurementCorrectionsCapabilitiesMask capabilities) {
+    if (nullptr != spMeasurementCorrections) {
+        spMeasurementCorrections->setCapabilitiesCb(capabilities);
+    }
 }
 
 void MeasurementCorrectionsInterface::setCapabilitiesCb(
@@ -168,7 +178,7 @@ ScopedAStatus MeasurementCorrectionsInterface::setCallback(
 
     locCtrlCbs.measCorrSetCapabilitiesCb =
             [this] (GnssMeasurementCorrectionsCapabilitiesMask capabilities) {
-            setCapabilitiesCb(capabilities);
+            measCorrSetCapabilitiesCb(capabilities);
     };
     mGnss->getLocationControlApi()->updateCallbacks(locCtrlCbs);
     return ScopedAStatus::ok();}

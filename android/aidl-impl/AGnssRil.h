@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -61,10 +61,6 @@ public:
       return ScopedAStatus::ok();
   }
   ScopedAStatus updateNetworkState(const IAGnssRil::NetworkAttributes& attributes) override;
-  ScopedAStatus injectNiSuplMessageData(
-            const std::vector<uint8_t>& in_msgData, int32_t in_slotIndex) override {
-      return ScopedAStatus(AStatus_fromServiceSpecificError(STATUS_UNKNOWN_ERROR));
-  }
 private:
     Gnss* mGnss = nullptr;
 };

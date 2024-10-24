@@ -30,7 +30,7 @@
 /*
 Changes from Qualcomm Innovation Center are provided under the following license:
 
-Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2022, 2023 Qualcomm Innovation Center, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the
@@ -314,10 +314,6 @@ LocationCapabilitiesMask
 LocAdapterBase::getCapabilities()
 {
     LocationCapabilitiesMask mask = 0;
-    // Below feature flag needs to be set irrespective of engine capabilities are known or not
-#if defined (FEATURE_AUTOMOTIVE) || defined (FEATURE_NHZ_ENABLED)
-        mask |= LOCATION_CAPABILITIES_QWES_GNSS_NHZ;
-#endif
 
     if (isEngineCapabilitiesKnown()) {
         // time based tracking always supported
@@ -376,6 +372,14 @@ LocAdapterBase::getCapabilities()
         if (mPpFeatureStatusMask & DLP_FEATURE_STATUS_LIBRARY_PRESENT) {
             mask |= LOCATION_CAPABILITIES_PRECISE_LIB_PRESENT;
         }
+        if (ContextBase::isAntennaInfoAvailable()) {
+            mask |= LOCATION_CAPABILITIES_ANTENNA_INFO;
+        }
+        if (ContextBase::isFeatureSupported(LOC_SUPPORTED_FEATURE_GNSS_BANDS_SUPPORTED)) {
+            mask |= LOCATION_CAPABILITIES_GNSS_BANDS_BIT;
+        }
+        //Get QWES feature status mask
+        mask |= ContextBase::getQwesFeatureStatus();
         //Get HW feature status mask
         LocationHwCapabilitiesMask hwMask = ContextBase::getHwCapabilitiesMask();
         if ((hwMask & LOCATION_WIFI_CAPABILITY_RTT) != 0) {
@@ -383,10 +387,6 @@ LocAdapterBase::getCapabilities()
         }
         if ((hwMask & LOCATION_WIFI_CAPABILITY_RSSI) != 0) {
             mask |= LOCATION_CAPABILITIES_WIFI_RSSI_POSITIONING;
-        }
-
-        if (ContextBase::isFeatureSupported(LOC_SUPPORTED_FEATURE_GNSS_BANDS_SUPPORTED)) {
-            mask |= LOCATION_CAPABILITIES_GNSS_BANDS_BIT;
         }
     } else {
         LOC_LOGe("attempt to get capabilities before they are known.");

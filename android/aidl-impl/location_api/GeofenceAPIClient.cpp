@@ -69,7 +69,7 @@ GeofenceAPIClient::GeofenceAPIClient(const shared_ptr<IGnssGeofenceCallback>& ca
     };
 
     locationCallbacks.geofenceStatusCb =
-            [this](const GeofenceStatusNotification& geofenceStatusNotification) {
+            [this](GeofenceStatusNotification geofenceStatusNotification) {
         onGeofenceStatusCb(geofenceStatusNotification);
     };
 
@@ -181,8 +181,8 @@ void GeofenceAPIClient::onGeofenceBreachCb(
     }
 }
 
-void GeofenceAPIClient::onGeofenceStatusCb(
-        const GeofenceStatusNotification& geofenceStatusNotification) {
+void GeofenceAPIClient::onGeofenceStatusCb(GeofenceStatusNotification geofenceStatusNotification)
+{
     LOC_LOGd("geofenceStatusNotification: %d", geofenceStatusNotification.available);
     mMutex.lock();
     auto cbIface = mGnssGeofencingCbIface;
