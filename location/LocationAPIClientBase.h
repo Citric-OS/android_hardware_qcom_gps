@@ -163,10 +163,10 @@ public:
     LocationAPIRequest* getRequestBySessionArrayPtr(uint32_t* sessionArrayPtr);
 
     // LocationControlAPI
-    uint32_t locAPIGnssDeleteAidingData(const GnssAidingData& data);
+    uint32_t locAPIGnssDeleteAidingData(GnssAidingData& data);
     uint32_t locAPIEnable(LocationTechnologyType techType);
     void locAPIDisable();
-    uint32_t locAPIGnssUpdateConfig(const GnssConfig& config);
+    uint32_t locAPIGnssUpdateConfig(GnssConfig config);
     uint32_t locAPIGnssGetConfig(GnssConfigFlagsMask config);
     inline ILocationControlAPI* getControlAPI() { return mLocationControlAPI; }
 
@@ -248,9 +248,9 @@ public:
     LocationAPIRequest* getRequestBySession(uint32_t session);
 
     // LocationAPI
-    uint32_t locAPIStartTracking(const TrackingOptions& trackingOptions);
+    uint32_t locAPIStartTracking(TrackingOptions& trackingOptions);
     void locAPIStopTracking();
-    void locAPIUpdateTrackingOptions(const TrackingOptions& trackingOptions);
+    void locAPIUpdateTrackingOptions(TrackingOptions& trackingOptions);
 
     int32_t locAPIGetBatchSize();
     uint32_t locAPIStartSession(
